@@ -34,7 +34,7 @@ namespace ST.Infrastructure.Services.Configuration
 
             if (!settingsFromDb.Any() && keys.Any())
             {
-                throw new NotFoundException($"Beklenen Global Ayarlar ({typeof(TSetting).Name}) veritabanında bulunamadı.");
+                throw new NotFoundException($"Expected Global Settings ({typeof(TSetting).Name}) were not found in the database.");
             }
 
             TSetting result = new TSetting();
@@ -52,7 +52,7 @@ namespace ST.Infrastructure.Services.Configuration
                     }
                     catch (Exception ex)
                     {
-                        throw new InvalidOperationException($"Ayar anahtarı '{prop.Name}' ('{dbSetting.Value}') hedef tip {prop.PropertyType.Name}'ye dönüştürülemedi.", ex);
+                        throw new InvalidOperationException($"Setting key '{prop.Name}' ('{dbSetting.Value}') could not be converted to target type {prop.PropertyType.Name}.", ex);
                     }
                 }
             }
