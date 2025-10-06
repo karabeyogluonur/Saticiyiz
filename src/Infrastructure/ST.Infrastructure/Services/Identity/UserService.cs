@@ -2,8 +2,6 @@ using Microsoft.AspNetCore.Identity;
 using ST.Application.Interfaces.Identity;
 using ST.Infrastructure.Identity;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace ST.Infrastructure.Services.Identity
 {

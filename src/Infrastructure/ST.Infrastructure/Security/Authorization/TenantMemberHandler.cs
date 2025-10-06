@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using ST.Infrastructure.Persistence;
 using System.Security.Claims;
 using Finbuckle.MultiTenant;
 using Microsoft.AspNetCore.Http;

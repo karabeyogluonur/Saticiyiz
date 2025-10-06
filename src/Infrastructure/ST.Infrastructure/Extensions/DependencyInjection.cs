@@ -31,10 +31,13 @@ namespace ST.Infrastructure.Extensions
     {
         public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
         {
+            #region Database Configuration
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")))
                 .AddUnitOfWork<ApplicationDbContext>();
+            #endregion
 
+            #region Identity Configuration
             services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
             {
                 options.Password.RequireDigit = true;
@@ -57,11 +60,15 @@ namespace ST.Infrastructure.Extensions
             })
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders();
+            #endregion
 
+            #region Core Services
             services.AddHttpContextAccessor();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IFeatureAccessService, FeatureAccessService>();
+            #endregion
 
+            #region Multi-Tenancy Configuration
             services.AddMultiTenant<ApplicationTenant>()
                 .WithStore<HybridTenantStore>(ServiceLifetime.Scoped)
                 .WithDelegateStrategy(context =>
@@ -69,20 +76,26 @@ namespace ST.Infrastructure.Extensions
                     string? tenantId = (context as HttpContext)?.User.FindFirstValue(CustomClaims.TenantId);
                     return Task.FromResult(tenantId);
                 });
+            #endregion
 
+            #region Authorization Configuration
             services.AddScoped<IAuthorizationHandler, TenantMemberHandler>();
             services.AddAuthorization(options =>
             {
                 options.AddPolicy("MustBeMemberOfTenant", policy =>
                     policy.AddRequirements(new TenantMemberRequirement()));
             });
+            #endregion
 
+            #region MediatR Pipeline Behaviors
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(PlanCheckPipelineBehavior<,>));
+            #endregion
 
+            #region Database Initialization
             services.AddScoped<IDbInitializer, DbInitializer>();
             services.AddScoped<ISeeder, SettingSeeder>();
             services.AddScoped<ISettingSeeder, SettingSeeder>();
-
+            #endregion
 
             return services;
         }
