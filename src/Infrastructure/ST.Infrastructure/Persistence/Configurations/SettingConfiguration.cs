@@ -12,10 +12,6 @@ namespace ST.Infrastructure.Persistence.Configurations
             builder.HasKey(s => s.Id);
             builder.Property(s => s.Key).IsRequired().HasMaxLength(128);
 
-            // KRİTİK: Global ve Kiracıya Özgü Ayarların Benzersizliğini Sağlama
-            // Key ve TenantId kombinasyonu benzersiz olmalı, ancak PostgreSQL'de 
-            // Global ayarlar (TenantId = NULL) için bu index'i esnek tutmalıyız.
-            // Bu filtre, sadece TenantId bir değere sahip olduğunda benzersizliği zorlar.
             builder.HasIndex(s => new { s.Key, s.TenantId })
                    .IsUnique()
                    .HasFilter("\"TenantId\" IS NOT NULL");

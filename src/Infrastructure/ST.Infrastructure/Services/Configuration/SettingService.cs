@@ -27,18 +27,16 @@ namespace ST.Infrastructure.Services.Configuration
         public async Task<TSetting> GetGlobalSettingsAsync<TSetting>()
             where TSetting : ISetting, new()
         {
-            // 1. İhtiyaç Duyulan Anahtarları Bulma (Reflection)
             var properties = typeof(TSetting).GetProperties(BindingFlags.Public | BindingFlags.Instance);
             var keys = properties.Select(p => p.Name).ToList();
 
             var settingsFromDb = await _settingRepository
-                .GetAll() // Tüm ayarları getir
+                .GetAll()
                 .Where(s => keys.Contains(s.Key) && s.TenantId == null)
                 .ToListAsync();
 
             if (!settingsFromDb.Any() && keys.Any())
             {
-                // En az bir ayar beklendiği halde bulunamadı.
                 throw new NotFoundException($"Beklenen Global Ayarlar ({typeof(TSetting).Name}) veritabanında bulunamadı.");
             }
 

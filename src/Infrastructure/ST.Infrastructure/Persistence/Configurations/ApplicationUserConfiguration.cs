@@ -9,18 +9,16 @@ namespace ST.Infrastructure.Persistence.Configurations
     {
         public void Configure(EntityTypeBuilder<ApplicationUser> builder)
         {
-            // TenantId zorunluluğu ve boyutu
             builder.Property(u => u.TenantId)
                    .IsRequired()
                    .HasMaxLength(64);
 
             builder.HasOne(u => u.Tenant)
-                   .WithMany() // ApplicationTenant'taki koleksiyonu görmezden gelir
+                   .WithMany()
                    .HasForeignKey(u => u.TenantId)
                    .IsRequired()
-                   .OnDelete(DeleteBehavior.Restrict); // <-- Bu satırın Düzgün SQL üretmesini ZORLUYORUZ.
+                   .OnDelete(DeleteBehavior.Restrict);
 
-            // TenantId üzerinde index
             builder.HasIndex(u => u.TenantId);
         }
     }

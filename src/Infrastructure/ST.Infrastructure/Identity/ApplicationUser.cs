@@ -10,10 +10,8 @@ namespace ST.Infrastructure.Identity
         public string LastName { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
 
-        // Foreign Key
         public string TenantId { get; set; } = default!;
 
-        // --- NAVİGASYON ÖZELLİĞİ ---
         [ForeignKey(nameof(TenantId))]
         public virtual ApplicationTenant Tenant { get; set; } = default!;
     }

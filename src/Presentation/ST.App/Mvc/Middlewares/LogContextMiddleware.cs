@@ -1,7 +1,7 @@
 using Finbuckle.MultiTenant;
 using Serilog.Context;
 using System.Security.Claims;
-using ST.Domain.Entities; // ApplicationTenant sınıfınızın olduğu yer
+using ST.Domain.Entities;
 
 namespace ST.App.Mvc.Middlewares;
 
@@ -16,12 +16,9 @@ public class LogContextMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        // LogContext'e eklenecek bilgileri topla
         var tenant = context.GetMultiTenantContext<ApplicationTenant>()?.TenantInfo;
         var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        // LogContext.PushProperty, using bloğu boyunca tüm loglara bu bilgileri ekler.
-        // Bu yapı, asenkron ve paralel isteklerde bilgilerin karışmasını engeller.
         using (LogContext.PushProperty("TenantId", tenant?.Identifier ?? "none"))
         using (LogContext.PushProperty("UserId", userId ?? "anonymous"))
         {

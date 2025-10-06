@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using ST.Infrastructure.Identity;
-using ST.Domain.Entities; // ApplicationTenant için
+using ST.Domain.Entities;
 
 namespace ST.Infrastructure.Persistence.Configurations
 {
@@ -9,22 +9,17 @@ namespace ST.Infrastructure.Persistence.Configurations
     {
         public void Configure(EntityTypeBuilder<ApplicationRole> builder)
         {
-            // Description alanı kısıtlaması
             builder.Property(r => r.Description).HasMaxLength(256);
 
-            // KRİTİK: Multi-Tenant Role Konfigürasyonu
-            // Identity'deki Rol adının, aynı kiracı içinde benzersiz olması gerekir.
             builder.HasIndex(r => new { r.TenantId, r.NormalizedName })
-                   .HasName("IX_Role_Tenant_Name") // İsimlendir
+                   .HasName("IX_Role_Tenant_Name")
                    .IsUnique();
 
-            // 1. İlişki: ApplicationRole -> ApplicationTenant
-            // Rolün bir Kiracıya ait olduğunu belirtir.
             builder.HasOne<ApplicationTenant>()
-                   .WithMany() // ApplicationTenant'ta Role koleksiyonu tutmuyoruz.
+                   .WithMany()
                    .HasForeignKey(r => r.TenantId)
                    .IsRequired()
-                   .OnDelete(DeleteBehavior.Cascade); // Kiracı silinirse tüm roller silinsin (Güvenli varsayım).
+                   .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

@@ -13,7 +13,6 @@ namespace ST.Domain.Entities.Subscriptions
 
         public int PlanId { get; set; }
 
-        // Abonelik Bilgileri
         public SubscriptionStatus Status { get; set; }
         public DateTime CurrentPeriodEndDate { get; set; }
 
@@ -21,13 +20,11 @@ namespace ST.Domain.Entities.Subscriptions
 
         public virtual Plan Plan { get; set; } = default!;
 
-        // IAuditableEntity Uygulaması
         public string CreatedBy { get; set; } = default!;
         public DateTime CreatedDate { get; set; }
         public string? LastModifiedBy { get; set; }
         public DateTime? LastModifiedDate { get; set; }
 
-        // ISoftDeleteEntity Uygulaması
         public bool IsDeleted { get; set; } = false;
         public DateTime? DeletedDate { get; set; }
         public string? DeletedBy { get; set; }

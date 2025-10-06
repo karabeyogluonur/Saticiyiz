@@ -12,13 +12,11 @@ namespace ST.Infrastructure.Persistence.Configurations
             builder.HasKey(p => p.Id);
             builder.Property(p => p.Name).IsRequired().HasMaxLength(100);
             builder.Property(p => p.Price).HasColumnType("numeric").IsRequired();
-            // Varsayılan değerler C# Entity'de tanımlanmıştır.
 
-            // PlanFeatures koleksiyonu bu sınıf içinde tanımlanabilir.
             builder.HasMany(p => p.Features)
                    .WithOne(pf => pf.Plan)
                    .HasForeignKey(pf => pf.PlanId)
-                   .OnDelete(DeleteBehavior.Cascade); // Plan silinirse özellikler silinsin.
+                   .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

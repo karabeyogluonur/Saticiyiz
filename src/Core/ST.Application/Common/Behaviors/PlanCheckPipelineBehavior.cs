@@ -2,7 +2,6 @@ using MediatR;
 using ST.Application.Interfaces.Subscriptions;
 using System.Reflection;
 
-
 namespace ST.Application.Common.Behaviors;
 
 public class PlanCheckPipelineBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>

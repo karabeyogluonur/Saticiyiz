@@ -1,6 +1,6 @@
 using System.Net;
 using System.Text.Json;
-using ST.Application.Exceptions; // Kendi özel exception sınıflarımız
+using ST.Application.Exceptions;
 
 namespace ST.App.Mvc.Middlewares;
 
@@ -21,45 +21,35 @@ public class GlobalExceptionHandlerMiddleware
     {
         try
         {
-            // Bir sonraki middleware'i çağır. Eğer hata olmazsa, bu metot sorunsuz tamamlanır.
             await _next(context);
         }
         catch (Exception ex)
         {
-            // Hata olursa, burada yakala.
             _logger.LogError(ex, "An unhandled exception has occurred. Message: {Message}", ex.Message);
 
             var response = context.Response;
             response.ContentType = "application/json";
 
-            // Hatanın türüne göre HTTP durum kodunu belirle
             switch (ex)
             {
                 case ValidationException e:
                     response.StatusCode = (int)HttpStatusCode.BadRequest;
-                    // FluentValidation hatalarını döndürebiliriz
                     await response.WriteAsync(JsonSerializer.Serialize(new { errors = e.Errors }));
-                    return; // Hata cevabı yazıldığı için metodu sonlandır.
+                    return;
 
                 case NotFoundException:
                     response.StatusCode = (int)HttpStatusCode.NotFound;
                     break;
 
-                // Buraya başka özel hata türleri eklenebilir.
-                // case UnauthorizedAccessException:
-                //     response.StatusCode = (int)HttpStatusCode.Unauthorized;
-                //     break;
 
                 default:
                     response.StatusCode = (int)HttpStatusCode.InternalServerError;
                     break;
             }
 
-            // Dönecek olan hata mesajını ortamına göre belirle
             var errorResponse = new
             {
                 message = ex.Message,
-                // Production ortamındaysak, kullanıcıya teknik detayları (stack trace) sızdırmıyoruz.
                 stackTrace = _env.IsDevelopment() ? ex.StackTrace : null
             };
 

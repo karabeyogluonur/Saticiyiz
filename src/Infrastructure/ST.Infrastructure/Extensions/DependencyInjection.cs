@@ -35,40 +35,33 @@ namespace ST.Infrastructure.Extensions
                 options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")))
                 .AddUnitOfWork<ApplicationDbContext>();
 
-            // 2. Kapsamlı Identity Servis Yapılandırması
             services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
             {
-                // **A. Şifre Politikaları (Orta Düzey SaaS Standartı)**
-                options.Password.RequireDigit = true;         // Rakam gereksin
-                options.Password.RequireLowercase = true;     // Küçük harf gereksin
-                options.Password.RequireUppercase = true;     // Büyük harf gereksin
-                options.Password.RequireNonAlphanumeric = false; // Özel karakter zorunlu değil (çoğu SaaS, karmaşıklığı dengelemek için bunu kaldırır)
-                options.Password.RequiredLength = 10;         // Minimum 10 karakter uzunluğu
-                options.Password.RequiredUniqueChars = 1;     // Benzersiz karakter gerekliliği
+                options.Password.RequireDigit = true;
+                options.Password.RequireLowercase = true;
+                options.Password.RequireUppercase = true;
+                options.Password.RequireNonAlphanumeric = false;
+                options.Password.RequiredLength = 10;
+                options.Password.RequiredUniqueChars = 1;
 
-                // **B. Oturum Açma (Sign-In) Ayarları**
-                options.SignIn.RequireConfirmedAccount = true;  // ⚠️ E-posta onayını zorunlu kıl (Güvenlik için kritik)
-                options.SignIn.RequireConfirmedEmail = true;    // E-posta onayını zorunlu kıl
+                options.SignIn.RequireConfirmedAccount = true;
+                options.SignIn.RequireConfirmedEmail = true;
                 options.SignIn.RequireConfirmedPhoneNumber = false;
 
-                // **C. Kullanıcı Kilitleme (Lockout) Ayarları**
-                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5); // 5 dakika kilitle
-                options.Lockout.MaxFailedAccessAttempts = 5;                     // 5 başarısız denemeden sonra kilitle
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+                options.Lockout.MaxFailedAccessAttempts = 5;
                 options.Lockout.AllowedForNewUsers = true;
 
-                // **D. Kullanıcı Ayarları**
-                options.User.RequireUniqueEmail = true;         // E-posta benzersiz olmalı
+                options.User.RequireUniqueEmail = true;
 
             })
-            .AddEntityFrameworkStores<ApplicationDbContext>() // Identity bilgilerini DbContext'te tut
-            .AddDefaultTokenProviders();                    // Şifre sıfırlama vb. için token sağlayıcıları ekle
+            .AddEntityFrameworkStores<ApplicationDbContext>()
+            .AddDefaultTokenProviders();
 
-            // 3. HttpContext ve Servis Bağımlılıkları
             services.AddHttpContextAccessor();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IFeatureAccessService, FeatureAccessService>();
 
-            // 4. Multi-Tenancy (Finbuckle) Yapılandırması
             services.AddMultiTenant<ApplicationTenant>()
                 .WithStore<HybridTenantStore>(ServiceLifetime.Scoped)
                 .WithDelegateStrategy(context =>
@@ -77,7 +70,6 @@ namespace ST.Infrastructure.Extensions
                     return Task.FromResult(tenantId);
                 });
 
-            // 5. Yetkilendirme (Authorization) Yapılandırması
             services.AddScoped<IAuthorizationHandler, TenantMemberHandler>();
             services.AddAuthorization(options =>
             {
@@ -85,7 +77,6 @@ namespace ST.Infrastructure.Extensions
                     policy.AddRequirements(new TenantMemberRequirement()));
             });
 
-            // 6. MediatR Pipeline Davranışları
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(PlanCheckPipelineBehavior<,>));
 
             services.AddScoped<IDbInitializer, DbInitializer>();

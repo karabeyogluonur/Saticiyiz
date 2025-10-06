@@ -3,16 +3,14 @@ using Finbuckle.MultiTenant.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using ST.Infrastructure.Persistence.Contexts; // ApplicationDbContext
+using ST.Infrastructure.Persistence.Contexts;
 using ST.Domain.Entities;
-using ST.Application.Interfaces.Repositories; // ApplicationTenant Entity'si
+using ST.Application.Interfaces.Repositories;
 
 namespace ST.Infrastructure.Tenancy
 {
-    // ApplicationTenant'ı ITenantInfo olarak okur ve yazar.
     public class HybridTenantStore : IMultiTenantStore<ApplicationTenant>
     {
-        // KRİTİK: Tüm Entity'leri içeren ApplicationDbContext üzerindeki Unit of Work kullanılır.
         private readonly IUnitOfWork<ApplicationDbContext> _unitOfWork;
         private readonly IRepository<ApplicationTenant> _tenantRepository;
         private readonly IConfiguration _configuration;
@@ -24,13 +22,11 @@ namespace ST.Infrastructure.Tenancy
             ILogger<HybridTenantStore> logger)
         {
             _unitOfWork = unitOfWork;
-            // Repository'yi UoW üzerinden al ve readonly alana ata
             _tenantRepository = _unitOfWork.GetRepository<ApplicationTenant>();
             _configuration = configuration;
             _logger = logger;
         }
 
-        // --- OKUMA İŞLEMLERİ ---
 
         public async Task<ApplicationTenant?> TryGetByIdentifierAsync(string identifier)
         {
@@ -43,8 +39,6 @@ namespace ST.Infrastructure.Tenancy
                 return null;
             }
 
-            // Shared Database (Tek Veritabanı) Mantığı:
-            // Eğer ConnectionString veritabanında NULL ise, Host ConnectionString'i atarız.
             if (string.IsNullOrEmpty(tenant.ConnectionString))
             {
                 tenant.ConnectionString = _configuration.GetConnectionString("DefaultConnection");
@@ -64,7 +58,6 @@ namespace ST.Infrastructure.Tenancy
                 return null;
             }
 
-            // Shared Database Mantığı
             if (string.IsNullOrEmpty(tenant.ConnectionString))
             {
                 tenant.ConnectionString = _configuration.GetConnectionString("DefaultConnection");
@@ -73,7 +66,6 @@ namespace ST.Infrastructure.Tenancy
             return tenant;
         }
 
-        // --- YAZMA İŞLEMLERİ ---
 
         public async Task<bool> TryAddAsync(ApplicationTenant tenant)
         {
@@ -88,7 +80,7 @@ namespace ST.Infrastructure.Tenancy
 
             try
             {
-                await _unitOfWork.SaveChangesAsync(); // UoW ile kaydet
+                await _unitOfWork.SaveChangesAsync();
                 return true;
             }
             catch (DbUpdateException ex)
@@ -100,7 +92,6 @@ namespace ST.Infrastructure.Tenancy
 
         public async Task<bool> TryUpdateAsync(ApplicationTenant tenant)
         {
-            // Update işlemi için FindAsync yerine GetAll().FirstOrDefaultAsync() kullanmak daha güvenlidir.
             var existingTenant = await _tenantRepository.GetAll().FirstOrDefaultAsync(t => t.Id == tenant.Id);
             if (existingTenant == null)
             {
@@ -108,12 +99,11 @@ namespace ST.Infrastructure.Tenancy
                 return false;
             }
 
-            // Entity'yi güncelleme
             _tenantRepository.Update(tenant);
 
             try
             {
-                await _unitOfWork.SaveChangesAsync(); // UoW ile kaydet
+                await _unitOfWork.SaveChangesAsync();
                 return true;
             }
             catch (DbUpdateException ex)
@@ -132,13 +122,12 @@ namespace ST.Infrastructure.Tenancy
                 return false;
             }
 
-            // Yumuşak Silme (Soft Delete) uygulaması
             tenantToRemove.IsActive = false;
             _tenantRepository.Update(tenantToRemove);
 
             try
             {
-                await _unitOfWork.SaveChangesAsync(); // UoW ile kaydet
+                await _unitOfWork.SaveChangesAsync();
                 return true;
             }
             catch (DbUpdateException ex)
@@ -148,7 +137,6 @@ namespace ST.Infrastructure.Tenancy
             }
         }
 
-        // --- TOPLU OKUMA İŞLEMLERİ ---
 
         public async Task<IEnumerable<ApplicationTenant>> GetAllAsync()
         {

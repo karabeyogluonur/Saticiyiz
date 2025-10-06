@@ -11,22 +11,19 @@ namespace ST.Infrastructure.Persistence.Configurations
         {
             builder.HasKey(s => s.Id);
 
-            // TenantId FK Konfigürasyonu (Restrict)
             builder.Property(s => s.TenantId).IsRequired().HasMaxLength(64);
             builder.HasOne(s => s.Tenant)
                    .WithMany(t => t.Subscriptions)
                    .HasForeignKey(s => s.TenantId)
                    .IsRequired()
-                   .OnDelete(DeleteBehavior.Restrict); // Abonelik varken Kiracı silinemez.
+                   .OnDelete(DeleteBehavior.Restrict);
 
-            // PlanId FK Konfigürasyonu (Restrict)
             builder.HasOne(s => s.Plan)
                    .WithMany(p => p.Subscriptions)
                    .HasForeignKey(s => s.PlanId)
                    .IsRequired()
-                   .OnDelete(DeleteBehavior.Restrict); // Plan varken Abonelik silinemez.
+                   .OnDelete(DeleteBehavior.Restrict);
 
-            // Indexler
             builder.HasIndex(s => s.TenantId);
             builder.HasIndex(s => s.PlanId);
         }

@@ -1,4 +1,4 @@
-namespace ST.Domain.Constants
+namespace ST.Application.Common.Constants
 {
     public static class AppRoles
     {

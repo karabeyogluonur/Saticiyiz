@@ -3,7 +3,7 @@ using Finbuckle.MultiTenant.Abstractions;
 using Microsoft.Extensions.Configuration;
 using ST.Application.Interfaces.Configuration;
 using ST.Application.Interfaces.Seeds;
-using ST.Infrastructure.Tenancy; // ApplicationTenant'ın bulunduğu yer
+using ST.Infrastructure.Tenancy;
 using System;
 using System.Threading.Tasks;
 
@@ -13,7 +13,6 @@ namespace ST.Infrastructure.Services.Configuration
     {
         private readonly ISettingSeeder _settingSeeder;
 
-        // Constructor sadece ISettingSeeder'ı alır.
         public DbInitializer(ISettingSeeder settingSeeder)
         {
             _settingSeeder = settingSeeder;

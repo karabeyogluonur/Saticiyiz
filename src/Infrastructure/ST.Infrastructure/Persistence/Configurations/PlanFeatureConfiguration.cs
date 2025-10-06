@@ -11,21 +11,18 @@ namespace ST.Infrastructure.Persistence.Configurations
         {
             builder.HasKey(pf => pf.Id);
 
-            // FK Tanımı 1: Plan -> PlanFeature
             builder.HasOne(pf => pf.Plan)
-                   .WithMany(p => p.Features) // Plan Entity'deki Features koleksiyonu
+                   .WithMany(p => p.Features)
                    .HasForeignKey(pf => pf.PlanId)
                    .IsRequired()
-                   .OnDelete(DeleteBehavior.Cascade); // Plan silinirse özellikler silinsin.
+                   .OnDelete(DeleteBehavior.Cascade);
 
-            // FK Tanımı 2: FeatureDefinition -> PlanFeature
             builder.HasOne(pf => pf.FeatureDefinition)
-                   .WithMany(fd => fd.PlanFeatures) // FeatureDefinition Entity'deki PlanFeatures koleksiyonu
+                   .WithMany(fd => fd.PlanFeatures)
                    .HasForeignKey(pf => pf.FeatureDefinitionId)
                    .IsRequired()
-                   .OnDelete(DeleteBehavior.Cascade); // Özellik tanımı silinirse ilişki silinsin.
+                   .OnDelete(DeleteBehavior.Cascade);
 
-            // Value ve diğer alanların kısıtlamaları (Eğer varsa)
             builder.Property(pf => pf.Value).IsRequired().HasMaxLength(256);
         }
     }

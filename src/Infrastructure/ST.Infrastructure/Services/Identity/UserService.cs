@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using ST.Application.Interfaces.Identity;
-using ST.Infrastructure.Identity; // ApplicationUser'ı içerir
+using ST.Infrastructure.Identity;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -76,7 +76,6 @@ namespace ST.Infrastructure.Services.Identity
         public async Task<string?> GetTenantIdByUserIdAsync(string userId)
         {
             var user = await _userManager.FindByIdAsync(userId);
-            // Uygulama kullanıcısından TenantId alanını çekme
             return user?.TenantId;
         }
 

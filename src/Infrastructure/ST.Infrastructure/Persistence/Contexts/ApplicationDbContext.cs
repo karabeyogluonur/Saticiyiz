@@ -15,7 +15,6 @@ namespace ST.Infrastructure.Persistence.Contexts
         private readonly IMultiTenantContextAccessor _tenantContextAccessor;
         private readonly string? _currentTenantId;
 
-        // --- TÜM DBSETS (Shared Database) ---
         public DbSet<ApplicationTenant> ApplicationTenants { get; set; }
         public DbSet<Setting> Settings { get; set; }
         public DbSet<Plan> Plans { get; set; }
@@ -23,7 +22,6 @@ namespace ST.Infrastructure.Persistence.Contexts
         public DbSet<PlanFeature> PlanFeatures { get; set; }
         public DbSet<Subscription> Subscriptions { get; set; }
 
-        // --- KURUCULAR (CONSTRUCTORS) ---
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         {
@@ -39,7 +37,6 @@ namespace ST.Infrastructure.Persistence.Contexts
             _currentTenantId = tenantContextAccessor.MultiTenantContext?.TenantInfo?.Id;
         }
 
-        // --- ONMODELCREATING: KONFİGÜRASYON VE KISITLAMA TANIMLARI ---
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -53,14 +50,11 @@ namespace ST.Infrastructure.Persistence.Contexts
 
             builder.ConfigureMultiTenant();
 
-            // 1. Query Filter (Kiracıya Özgü Veri Filtreleme)
             if (_currentTenantId != null)
             {
-                // Subscription Entity'si için filtreleme
                 builder.Entity<Subscription>()
                     .HasQueryFilter(s => s.TenantId == _currentTenantId);
 
-                // ApplicationUser Entity'si için filtreleme
                 builder.Entity<ApplicationUser>()
                     .HasQueryFilter(u => u.TenantId == _currentTenantId);
             }

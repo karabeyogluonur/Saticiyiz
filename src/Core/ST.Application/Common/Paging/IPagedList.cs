@@ -12,6 +12,5 @@ public interface IPagedList<T>
     int TotalPages { get; }
     IList<T> Items { get; }
     bool HasPreviousPage { get; }
-
     bool HasNextPage { get; }
 }
