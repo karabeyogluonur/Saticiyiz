@@ -1,0 +1,13 @@
+@{
+    ViewData["Title"] = "Sayfa Bulunamadı";
+    Layout = "_Layout"; // Veya daha basit bir _ErrorLayout kullanabilirsiniz.
+}
+
+<div class="text-center">
+    <h1 class="display-1 text-danger">404</h1>
+    <h2 class="display-4">Sayfa Bulunamadı</h2>
+    <p>
+        Aradığınız sayfa mevcut değil veya taşınmış olabilir.
+    </p>
+    <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Anasayfa'ya Dön</a>
+</div>
