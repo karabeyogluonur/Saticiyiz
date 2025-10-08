@@ -1,0 +1,36 @@
+@using ST.Application.DTOs.Messages
+@model IEnumerable<UINotificationDto>
+
+@if (Model.Any())
+{
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+
+
+            var notifications = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                            Model,
+                            new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }
+                            ));
+
+        notifications.forEach(function (n) {
+            if (n.duration) toastr.options.timeOut = n.duration;
+
+                switch ((n.type || 'info').toLowerCase()) {
+                    case 'success':
+                        toastr.success(n.message, n.title || '');
+                        break;
+                    case 'error':
+                        toastr.error(n.message, n.title || '');
+                        break;
+                    case 'warning':
+                        toastr.warning(n.message, n.title || '');
+                        break;
+                    case 'info':
+                    default:
+                        toastr.info(n.message, n.title || '');
+                        break;
+                }
+            });
+        });
+    </script>
+}

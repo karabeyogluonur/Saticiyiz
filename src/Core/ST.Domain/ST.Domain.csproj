@@ -9,6 +9,8 @@
   <ItemGroup>
     <PackageReference Include="Finbuckle.MultiTenant" Version="9.4.0" />
     <PackageReference Include="Finbuckle.MultiTenant.AspNetCore" Version="9.4.0" />
+    <PackageReference Include="MediatR" Version="13.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.9" />
   </ItemGroup>
 
 </Project>

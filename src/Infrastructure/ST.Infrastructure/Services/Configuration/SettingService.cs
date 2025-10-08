@@ -24,10 +24,10 @@ namespace ST.Infrastructure.Services.Configuration
         public async Task<TSetting> GetGlobalSettingsAsync<TSetting>()
             where TSetting : ISetting, new()
         {
-            var properties = typeof(TSetting).GetProperties(BindingFlags.Public | BindingFlags.Instance);
-            var keys = properties.Select(p => p.Name).ToList();
+            PropertyInfo[] properties = typeof(TSetting).GetProperties(BindingFlags.Public | BindingFlags.Instance);
+            List<string> keys = properties.Select(p => p.Name).ToList();
 
-            var settingsFromDb = await _settingRepository
+            List<Setting> settingsFromDb = await _settingRepository
                 .GetAll()
                 .Where(s => keys.Contains(s.Key) && s.TenantId == null)
                 .ToListAsync();
@@ -39,15 +39,15 @@ namespace ST.Infrastructure.Services.Configuration
 
             TSetting result = new TSetting();
 
-            foreach (var prop in properties)
+            foreach (PropertyInfo prop in properties)
             {
-                var dbSetting = settingsFromDb.FirstOrDefault(s => s.Key == prop.Name);
+                Setting dbSetting = settingsFromDb.FirstOrDefault(s => s.Key == prop.Name);
 
                 if (dbSetting != null && prop.CanWrite)
                 {
                     try
                     {
-                        var convertedValue = Convert.ChangeType(dbSetting.Value, prop.PropertyType, CultureInfo.InvariantCulture);
+                        object convertedValue = Convert.ChangeType(dbSetting.Value, prop.PropertyType, CultureInfo.InvariantCulture);
                         prop.SetValue(result, convertedValue);
                     }
                     catch (Exception ex)

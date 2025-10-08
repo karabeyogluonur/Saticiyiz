@@ -1,4 +1,4 @@
-
+using Finbuckle.MultiTenant.EntityFrameworkCore;
 using System.Data;
 using System.Text.RegularExpressions;
 using System.Transactions;
@@ -6,7 +6,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Storage;
 using ST.Application.Interfaces.Repositories;
+using ST.Domain.Events.Common;
 
 namespace ST.Infrastructure.Persistence.Repositories;
 
@@ -15,6 +17,7 @@ public class UnitOfWork<TContext> : IRepositoryFactory, IUnitOfWork<TContext>, I
     private readonly TContext _context;
     private bool disposed = false;
     private Dictionary<Type, object> repositories;
+    private IDbContextTransaction _transaction;
 
     public UnitOfWork(TContext context)
     {
@@ -25,19 +28,19 @@ public class UnitOfWork<TContext> : IRepositoryFactory, IUnitOfWork<TContext>, I
 
     public void ChangeDatabase(string database)
     {
-        var connection = _context.Database.GetDbConnection();
+        System.Data.Common.DbConnection connection = _context.Database.GetDbConnection();
         if (connection.State.HasFlag(ConnectionState.Open))
         {
             connection.ChangeDatabase(database);
         }
         else
         {
-            var connectionString = Regex.Replace(connection.ConnectionString.Replace(" ", ""), @"(?<=[Dd]atabase=)\w+(?=;)", database, RegexOptions.Singleline);
+            string connectionString = Regex.Replace(connection.ConnectionString.Replace(" ", ""), @"(?<=[Dd]atabase=)\w+(?=;)", database, RegexOptions.Singleline);
             connection.ConnectionString = connectionString;
         }
 
-        var items = _context.Model.GetEntityTypes();
-        foreach (var item in items)
+        IEnumerable<IEntityType> items = _context.Model.GetEntityTypes();
+        foreach (IEntityType item in items)
         {
             if (item is IConventionEntityType entityType)
             {
@@ -55,14 +58,14 @@ public class UnitOfWork<TContext> : IRepositoryFactory, IUnitOfWork<TContext>, I
 
         if (hasCustomRepository)
         {
-            var customRepo = _context.GetService<IRepository<TEntity>>();
+            IRepository<TEntity> customRepo = _context.GetService<IRepository<TEntity>>();
             if (customRepo != null)
             {
                 return customRepo;
             }
         }
 
-        var type = typeof(TEntity);
+        Type type = typeof(TEntity);
         if (!repositories.ContainsKey(type))
         {
             repositories[type] = new Repository<TEntity>(_context);
@@ -97,10 +100,10 @@ public class UnitOfWork<TContext> : IRepositoryFactory, IUnitOfWork<TContext>, I
 
     public async Task<int> SaveChangesAsync(bool ensureAutoHistory = false, params IUnitOfWork[] unitOfWorks)
     {
-        using (var ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+        using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
         {
-            var count = 0;
-            foreach (var unitOfWork in unitOfWorks)
+            int count = 0;
+            foreach (IUnitOfWork unitOfWork in unitOfWorks)
             {
                 count += await unitOfWork.SaveChangesAsync(ensureAutoHistory).ConfigureAwait(false);
             }
@@ -141,5 +144,53 @@ public class UnitOfWork<TContext> : IRepositoryFactory, IUnitOfWork<TContext>, I
     public void TrackGraph(object rootEntity, Action<EntityEntryGraphNode> callback)
     {
         _context.ChangeTracker.TrackGraph(rootEntity, callback);
+    }
+
+    public async Task BeginTransactionAsync()
+    {
+        _transaction = await _context.Database.BeginTransactionAsync();
+    }
+
+    public async Task CommitAsync()
+    {
+        try
+        {
+            await _transaction.CommitAsync();
+        }
+        finally
+        {
+            await _transaction.DisposeAsync();
+            _transaction = null;
+        }
+    }
+
+    public async Task RollbackAsync()
+    {
+        try
+        {
+            await _transaction.RollbackAsync();
+        }
+        finally
+        {
+            await _transaction.DisposeAsync();
+            _transaction = null;
+        }
+    }
+    public IEnumerable<DomainEvent> GetDomainEvents()
+    {
+        return _context.ChangeTracker.Entries<IDomainEvent>()
+            .Select(e => e.Entity)
+            .SelectMany(e => e.DomainEvents)
+            .ToList();
+    }
+
+    public void ClearDomainEvents()
+    {
+        List<IDomainEvent> domainEventEntities = _context.ChangeTracker.Entries<IDomainEvent>()
+            .Select(e => e.Entity)
+            .Where(e => e.DomainEvents.Any())
+            .ToList();
+
+        domainEventEntities.ForEach(e => e.ClearDomainEvents());
     }
 }

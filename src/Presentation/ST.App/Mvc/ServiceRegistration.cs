@@ -1,3 +1,5 @@
+using System.Reflection;
+using FluentValidation;
 using Serilog;
 using ST.Application.Extensions;
 using ST.Application.Interfaces.Identity;
@@ -15,6 +17,15 @@ namespace ST.App.Mvc
         public static void AddSerilogServices(this IServiceCollection services)
         {
             Log.Logger = new LoggerConfiguration().CreateBootstrapLogger();
+        }
+        public static void AddAutoMapper(this IServiceCollection services)
+        {
+            services.AddAutoMapper(Assembly.GetExecutingAssembly());
+            services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+        }
+        public static void AddFluentValidation(this IServiceCollection services)
+        {
+            services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
         }
 
         public static void AddAuthServices(this IServiceCollection services)

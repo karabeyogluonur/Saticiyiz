@@ -3,13 +3,13 @@ using System.Diagnostics;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using ST.App.Models;
+using ST.App.Features.Errors.ViewModels;
+using ST.App.Mvc.Controllers;
 
 namespace ST.App.Controllers;
 
-[AllowAnonymous]
 [Route("Error")]
-public class ErrorController : Controller
+public class ErrorController : BaseController
 {
     private readonly ILogger<ErrorController> _logger;
 

@@ -1,4 +1,5 @@
 using Serilog;
+using ST.App.Mvc.Middlewares;
 
 namespace ST.App.Mvc;
 
@@ -15,6 +16,10 @@ public static class BuilderRegistration
        .ReadFrom.Configuration(context.Configuration)
        .ReadFrom.Services(services)
        .Enrich.FromLogContext());
+    }
+    public static void UseCustomMiddlewares(this WebApplication builder)
+    {
+        builder.UseMiddleware<SetupMiddleware>();
     }
     public static void AddDevelopmentBuilder(this WebApplication application)
     {

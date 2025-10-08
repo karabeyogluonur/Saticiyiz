@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using ST.Infrastructure.Identity;
-using ST.Domain.Entities;
+using ST.Domain.Entities.Identity;
 
 namespace ST.Infrastructure.Persistence.Configurations
 {

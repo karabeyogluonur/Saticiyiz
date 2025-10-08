@@ -1,90 +1,36 @@
 using Microsoft.AspNetCore.Identity;
 using ST.Application.Interfaces.Identity;
-using ST.Infrastructure.Identity;
-using System.Collections.Generic;
+using ST.Application.Interfaces.Repositories;
+using ST.Application.Wrappers;
+using ST.Domain.Entities.Identity;
 
 namespace ST.Infrastructure.Services.Identity
 {
     public class UserService : IUserService
     {
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IRepository<ApplicationUserClaim> _applicationUserClaimRepository;
 
-        public UserService(
-            UserManager<ApplicationUser> userManager,
-            SignInManager<ApplicationUser> signInManager)
+        public UserService(UserManager<ApplicationUser> userManager, IUnitOfWork unitOfWork)
         {
             _userManager = userManager;
-            _signInManager = signInManager;
+            _unitOfWork = unitOfWork;
         }
 
-        public async Task<(IdentityResult Result, string UserId)> CreateUserWithTenantAsync(
-            string firstName,
-            string lastName,
-            string email,
-            string password,
-            string tenantId)
+        public async Task<Response<int>> CreateUserAsync(ApplicationUser user, string password, string tenantId)
         {
-            var user = new ApplicationUser
-            {
-                UserName = email,
-                Email = email,
-                FirstName = firstName,
-                LastName = lastName,
-                EmailConfirmed = true,
-                IsActive = true,
-                TenantId = tenantId
-            };
+            ApplicationUser userWithSameEmail = await _userManager.FindByEmailAsync(user.Email);
 
-            var result = await _userManager.CreateAsync(user, password);
+            if (userWithSameEmail != null)
+                return new Response<int>($"'{user.Email}' e-posta adresi zaten kullanılıyor.");
 
-            if (result.Succeeded)
-            {
-                return (result, user.Id);
-            }
-            return (result, string.Empty);
-        }
+            IdentityResult result = await _userManager.CreateAsync(user, password);
 
-        public async Task AddUserToTenantRoleAsync(string userId, string roleName)
-        {
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user != null)
-            {
-                await _userManager.AddToRoleAsync(user, roleName);
-            }
-        }
-        public async Task<string?> CheckPasswordSignInAsync(string email, string password)
-        {
-            var user = await _userManager.FindByEmailAsync(email);
+            if (!result.Succeeded)
+                return new Response<int>("Kullanıcı oluşturulurken bir hata oluştu.", result.Errors.Select(e => e.Description));
 
-            if (user == null || !user.IsActive)
-            {
-                return null;
-            }
-            var result = await _signInManager.CheckPasswordSignInAsync(user, password, lockoutOnFailure: true);
-
-            if (result.Succeeded)
-            {
-                return user.Id;
-            }
-
-            return null;
-        }
-
-        public async Task<string?> GetTenantIdByUserIdAsync(string userId)
-        {
-            var user = await _userManager.FindByIdAsync(userId);
-            return user?.TenantId;
-        }
-
-        public async Task<IList<string>> GetRolesAsync(string userId)
-        {
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null)
-            {
-                return new List<string>();
-            }
-            return await _userManager.GetRolesAsync(user);
+            return new Response<int>(user.Id, "Kullanıcı başarıyla oluşturuldu.");
         }
     }
 }

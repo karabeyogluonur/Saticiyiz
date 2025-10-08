@@ -439,49 +439,33 @@ public class Repository<TEntity> : IRepository<TEntity> where TEntity : class
     public virtual int Count(Expression<Func<TEntity, bool>> predicate = null)
     {
         if (predicate == null)
-        {
             return _dbSet.Count();
-        }
         else
-        {
             return _dbSet.Count(predicate);
-        }
     }
 
     public virtual async Task<int> CountAsync(Expression<Func<TEntity, bool>> predicate = null)
     {
         if (predicate == null)
-        {
             return await _dbSet.CountAsync();
-        }
         else
-        {
             return await _dbSet.CountAsync(predicate);
-        }
     }
 
     public virtual long LongCount(Expression<Func<TEntity, bool>> predicate = null)
     {
         if (predicate == null)
-        {
             return _dbSet.LongCount();
-        }
         else
-        {
             return _dbSet.LongCount(predicate);
-        }
     }
 
     public virtual async Task<long> LongCountAsync(Expression<Func<TEntity, bool>> predicate = null)
     {
         if (predicate == null)
-        {
             return await _dbSet.LongCountAsync();
-        }
         else
-        {
             return await _dbSet.LongCountAsync(predicate);
-        }
     }
 
     public virtual T Max<T>(Expression<Func<TEntity, bool>> predicate = null, Expression<Func<TEntity, T>> selector = null)
@@ -608,18 +592,18 @@ public class Repository<TEntity> : IRepository<TEntity> where TEntity : class
 
     public virtual void Delete(object id)
     {
-        var typeInfo = typeof(TEntity).GetTypeInfo();
-        var key = _dbContext.Model.FindEntityType(typeInfo).FindPrimaryKey().Properties.FirstOrDefault();
-        var property = typeInfo.GetProperty(key?.Name);
+        TypeInfo typeInfo = typeof(TEntity).GetTypeInfo();
+        IProperty key = _dbContext.Model.FindEntityType(typeInfo).FindPrimaryKey().Properties.FirstOrDefault();
+        PropertyInfo property = typeInfo.GetProperty(key?.Name);
         if (property != null)
         {
-            var entity = Activator.CreateInstance<TEntity>();
+            TEntity entity = Activator.CreateInstance<TEntity>();
             property.SetValue(entity, id);
             _dbContext.Entry(entity).State = EntityState.Deleted;
         }
         else
         {
-            var entity = _dbSet.Find(id);
+            TEntity entity = _dbSet.Find(id);
             if (entity != null)
             {
                 Delete(entity);

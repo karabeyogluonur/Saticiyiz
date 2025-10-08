@@ -1,4 +1,4 @@
-namespace ST.App.Models;
+namespace ST.App.Features.Errors.ViewModels;
 
 public class ErrorViewModel
 {

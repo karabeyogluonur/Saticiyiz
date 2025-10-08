@@ -1,20 +1,12 @@
 using Finbuckle.MultiTenant.Abstractions;
 using ST.Domain.Entities.Common;
-using ST.Domain.Entities.Subscriptions; // Navigation için User Entity
+using ST.Domain.Entities.Subscriptions;
 
 namespace ST.Domain.Entities
 {
     public class ApplicationTenant : BaseEntity<string>, IAuditableEntity, ISoftDeleteEntity, ITenantInfo
     {
         public ApplicationTenant() { }
-
-        public ApplicationTenant(string id, string identifier, string name, string? connectionString)
-        {
-            this.Id = id;
-            this.Identifier = identifier;
-            this.Name = name;
-            this.ConnectionString = connectionString;
-        }
 
         string? ITenantInfo.Id
         {
@@ -28,6 +20,7 @@ namespace ST.Domain.Entities
         public string Name { get; set; } = string.Empty;
         public string? ConnectionString { get; set; }
         public bool IsActive { get; set; } = true;
+        public bool IsSetupComplete { get; set; } = false;
 
         public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
 

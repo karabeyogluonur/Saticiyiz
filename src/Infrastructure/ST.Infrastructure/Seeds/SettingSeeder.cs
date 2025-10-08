@@ -26,7 +26,7 @@ namespace ST.Infrastructure.Seeds
                 return;
             }
 
-            var settingsToSeed = DiscoverAndMapSettings();
+            List<Setting> settingsToSeed = DiscoverAndMapSettings();
 
             await _settingRepository.InsertAsync(settingsToSeed);
             await _unitOfWork.SaveChangesAsync();
@@ -34,20 +34,20 @@ namespace ST.Infrastructure.Seeds
 
         private List<Setting> DiscoverAndMapSettings()
         {
-            var applicationAssembly = typeof(SubscriptionSetting).Assembly;
+            Assembly applicationAssembly = typeof(SubscriptionSetting).Assembly;
 
-            var settingTypes = applicationAssembly.GetTypes()
+            List<Type> settingTypes = applicationAssembly.GetTypes()
                 .Where(t => typeof(ISetting).IsAssignableFrom(t)
                          && t.IsClass
                          && !t.IsAbstract
                          && t.GetConstructor(Type.EmptyTypes) != null)
                 .ToList();
 
-            var settingsToSeed = new List<Setting>();
+            List<Setting> settingsToSeed = new List<Setting>();
 
-            foreach (var settingType in settingTypes)
+            foreach (Type settingType in settingTypes)
             {
-                var defaultSettingInstance = Activator.CreateInstance(settingType);
+                object defaultSettingInstance = Activator.CreateInstance(settingType);
 
                 string prefix = string.Empty;
                 if (defaultSettingInstance is IGroupSetting groupSetting)
@@ -55,9 +55,9 @@ namespace ST.Infrastructure.Seeds
                     prefix = groupSetting.GetPrefix() + ".";
                 }
 
-                var properties = settingType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+                PropertyInfo[] properties = settingType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
-                foreach (var prop in properties)
+                foreach (PropertyInfo prop in properties)
                 {
                     string key = prefix + prop.Name;
                     string value = prop.GetValue(defaultSettingInstance)?.ToString() ?? string.Empty;

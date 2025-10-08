@@ -30,6 +30,7 @@
     <script>var hostUrl = "/themes/metronic/assets/";</script>
     <script src="~/themes/metronic/assets/plugins/global/plugins.bundle.js"></script>
     <script src="~/themes/metronic/assets/js/scripts.bundle.js"></script>
+    @await Component.InvokeAsync("Notification")
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 

@@ -7,7 +7,6 @@ using Microsoft.Extensions.DependencyInjection;
 using MediatR;
 using Finbuckle.MultiTenant;
 using System.Security.Claims;
-using ST.Infrastructure.Identity;
 using ST.Application.Interfaces.Identity;
 using ST.Infrastructure.Services.Identity;
 using ST.Application.Interfaces.Subscriptions;
@@ -23,6 +22,12 @@ using ST.Infrastructure.Services.Configuration;
 using ST.Application.Interfaces.Seeds;
 using ST.Infrastructure.Persistence.Contexts;
 using ST.Infrastructure.Seeds;
+using ST.Domain.Entities.Identity;
+using ST.Application.Interfaces.Tenancy;
+using ST.Infrastructure.Services.Tenancy;
+using ST.Infrastructure.Identity;
+using ST.Application.Interfaces.Messages;
+using ST.Infrastructure.Services.Messages;
 using ST.Domain.Entities;
 
 namespace ST.Infrastructure.Extensions
@@ -33,7 +38,7 @@ namespace ST.Infrastructure.Extensions
         {
             #region Database Configuration
             services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")))
+                options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")).EnableSensitiveDataLogging())
                 .AddUnitOfWork<ApplicationDbContext>();
             #endregion
 
@@ -44,8 +49,7 @@ namespace ST.Infrastructure.Extensions
                 options.Password.RequireLowercase = true;
                 options.Password.RequireUppercase = true;
                 options.Password.RequireNonAlphanumeric = false;
-                options.Password.RequiredLength = 10;
-                options.Password.RequiredUniqueChars = 1;
+                options.Password.RequiredLength = 8;
 
                 options.SignIn.RequireConfirmedAccount = true;
                 options.SignIn.RequireConfirmedEmail = true;
@@ -59,13 +63,26 @@ namespace ST.Infrastructure.Extensions
 
             })
             .AddEntityFrameworkStores<ApplicationDbContext>()
-            .AddDefaultTokenProviders();
+            .AddDefaultTokenProviders()
+            .AddRoleValidator<TenantRoleValidator<ApplicationRole>>();
+
+            services.ConfigureApplicationCookie(options =>
+            {
+                options.LoginPath = "/Auth/Login";
+                options.LogoutPath = "/Auth/Logout";
+                options.AccessDeniedPath = "/Error/AccessDenied";
+                options.SlidingExpiration = true;
+                options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+            });
             #endregion
 
             #region Core Services
             services.AddHttpContextAccessor();
             services.AddScoped<IUserService, UserService>();
+            services.AddTransient<IRoleService, RoleService>();
             services.AddScoped<IFeatureAccessService, FeatureAccessService>();
+            services.AddScoped<ITenantService, TenantService>();
+            services.AddScoped<INotificationService, TempDataNotificationService>();
             #endregion
 
             #region Multi-Tenancy Configuration

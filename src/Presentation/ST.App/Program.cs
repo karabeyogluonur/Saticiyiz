@@ -11,6 +11,8 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddMemoryCache();
 builder.Services.AddAuthServices();
 builder.Services.AddLogging();
+builder.Services.AddAutoMapper();
+builder.Services.AddFluentValidation();
 
 var app = builder.Build();
 
@@ -25,6 +27,7 @@ app.AddBaseBuilder();
 app.AddRouteBuilder();
 app.AddAuthBuilder();
 app.UseSpecialRoute();
+app.UseCustomMiddlewares();
 
 app.UseStatusCodePagesWithReExecute("/Error/{0}");
 

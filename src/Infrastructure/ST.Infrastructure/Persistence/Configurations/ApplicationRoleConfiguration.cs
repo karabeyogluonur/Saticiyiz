@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using ST.Infrastructure.Identity;
 using ST.Domain.Entities;
+using ST.Domain.Entities.Identity;
 
 namespace ST.Infrastructure.Persistence.Configurations
 {
@@ -12,7 +12,7 @@ namespace ST.Infrastructure.Persistence.Configurations
             builder.Property(r => r.Description).HasMaxLength(256);
 
             builder.HasIndex(r => new { r.TenantId, r.NormalizedName })
-                   .HasName("IX_Role_Tenant_Name")
+                   .HasDatabaseName("IX_Role_Tenant_Name")
                    .IsUnique();
 
             builder.HasOne<ApplicationTenant>()

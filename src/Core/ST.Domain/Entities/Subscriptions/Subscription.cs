@@ -1,13 +1,9 @@
 using ST.Domain.Entities.Common;
 using ST.Domain.Enums;
-using System;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using ST.Domain.Entities; // Plan ve ApplicationTenant için
 
 namespace ST.Domain.Entities.Subscriptions
 {
-    public class Subscription : BaseEntity<Guid>, IAuditableEntity, ISoftDeleteEntity
+    public class Subscription : BaseEntity<int>, IAuditableEntity, ISoftDeleteEntity
     {
         public string TenantId { get; set; } = default!;
 
