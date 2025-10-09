@@ -16,9 +16,9 @@ public class PlanCheckPipelineBehavior<TRequest, TResponse> : IPipelineBehavior<
 
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
     {
-        var requiredFeatures = typeof(TRequest).GetCustomAttributes<RequiresPlanFeatureAttribute>();
+        IEnumerable<RequiresPlanFeatureAttribute> requiredFeatures = typeof(TRequest).GetCustomAttributes<RequiresPlanFeatureAttribute>();
 
-        foreach (var feature in requiredFeatures)
+        foreach (RequiresPlanFeatureAttribute feature in requiredFeatures)
         {
             await _featureAccessService.EnforceFeatureAccessAsync(feature.FeatureKey);
         }

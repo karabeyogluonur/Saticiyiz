@@ -11,6 +11,12 @@ namespace ST.Domain.Entities.Identity
         public bool IsActive { get; set; } = true;
         public string TenantId { get; set; } = default!;
 
+        public bool HasAcceptedTerms { get; set; } = true;
+        public DateTime? TermsAcceptedAt { get; set; } = DateTime.UtcNow;
+
+        public bool IsSubscribedToNewsletter { get; set; } = true;
+        public DateTime? NewsletterSubscribedAt { get; set; } = DateTime.UtcNow;
+
         [ForeignKey(nameof(TenantId))]
         public virtual ApplicationTenant Tenant { get; set; } = default!;
         private readonly List<DomainEvent> _domainEvents = new();

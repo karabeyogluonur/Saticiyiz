@@ -1,4 +1,7 @@
+using AutoMapper;
 using MediatR;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using ST.Application.Common.Attributes;
 using ST.Application.Interfaces.Identity;
 using ST.Application.Interfaces.Repositories;
@@ -15,46 +18,52 @@ namespace ST.Application.Features.Identity.Commands.RegisterUser
     public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, Response<int>>
     {
         private readonly IUserService _userService;
+        private readonly UserManager<ApplicationUser> _userManager;
         private readonly ITenantService _tenantService;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
 
-        public RegisterUserCommandHandler(IUserService userService, ITenantService tenantService, IUnitOfWork unitOfWork)
+        public RegisterUserCommandHandler(IUserService userService, ITenantService tenantService, IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager, IMapper mapper)
         {
             _userService = userService;
             _tenantService = tenantService;
             _unitOfWork = unitOfWork;
+            _userManager = userManager;
+            _mapper = mapper;
         }
 
         public async Task<Response<int>> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
         {
             Response<ApplicationTenant> tenantResponse = await _tenantService.CreateTenantAsync();
 
-            if (!tenantResponse.Succeeded)
-                return new Response<int>(tenantResponse.Message, tenantResponse.Errors);
-
             ApplicationTenant applicationTenant = tenantResponse.Data;
 
             applicationTenant.AddDomainEvent(new TenantCreatedEvent(applicationTenant.Id, applicationTenant.Name));
 
-            ApplicationUser user = new ApplicationUser
-            {
-                FirstName = request.FirstName,
-                LastName = request.LastName,
-                Email = request.Email,
-                UserName = request.Email,
-                PhoneNumber = request.PhoneNumber,
-                TenantId = applicationTenant.Id,
-            };
+            ApplicationUser applicationUser = _mapper.Map<ApplicationUser>(request);
+            applicationUser.TenantId = applicationTenant.Id;
 
-            Response<int> userResponse = await _userService.CreateUserAsync(user, request.Password, applicationTenant.Id);
 
-            if (!userResponse.Succeeded)
-                return new Response<int>(userResponse.Message, userResponse.Errors);
+            bool userWithSameEmail = await _userManager.Users.AnyAsync(user => user.Email == request.Email);
 
-            user.AddDomainEvent(new UserCreatedEvent(user.Id));
+            if (userWithSameEmail)
+                return Response<int>.Error($"'{request.Email}' e-posta adresi zaten kullanılıyor.");
+
+            bool userWithSamePhone = await _userManager.Users.AnyAsync(user => user.PhoneNumber == request.PhoneNumber);
+
+            if (userWithSamePhone)
+                return Response<int>.Error($"'{request.PhoneNumber}' telefon numarası zaten kullanılıyor.");
+
+            IdentityResult result = await _userManager.CreateAsync(applicationUser, request.Password);
+
+            if (!result.Succeeded)
+                return Response<int>.Error("Kullanıcı oluşturulurken bir hata oluştu.", result.Errors.Select(e => e.Description));
+
+            applicationUser.AddDomainEvent(new UserCreatedEvent(applicationUser.Id));
 
             await _unitOfWork.SaveChangesAsync();
-            return new Response<int>(user.Id, "Kayıt işlemi başarıyla tamamlandı.");
+
+            return Response<int>.Success(applicationUser.Id, "Kayıt işlemi başarıyla tamamlandı.");
         }
     }
 }

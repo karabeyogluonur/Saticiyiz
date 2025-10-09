@@ -462,3 +462,4 @@ private.key
 .sass-cache/
 /coverage
 /documents
+/email-templates

@@ -10,6 +10,7 @@ namespace ST.Application.Settings
         public SubscriptionSetting()
         {
             TrialPeriodDays = 7;
+            MaxStorageLimitGb = 10;
         }
         public string GetPrefix() => "Subscription";
 

@@ -34,28 +34,28 @@ namespace ST.Application.Features.Identity.Commands.LoginUser
             ApplicationUser user = await _userManager.FindByEmailAsync(request.Email);
 
             if (user == null || !user.IsActive)
-                return new Response<LoginResultDto>(new LoginResultDto { Status = LoginStatus.InvalidCredentials, ErrorMessage = "Geçersiz e-posta veya şifre." });
+                return Response<LoginResultDto>.ErrorWithData(new LoginResultDto { Status = LoginStatus.InvalidCredentials, ErrorMessage = "Geçersiz e-posta veya şifre." });
 
             SignInResult result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: true);
 
             if (result.IsLockedOut)
-                return new Response<LoginResultDto>(new LoginResultDto { Status = LoginStatus.LockedOut, ErrorMessage = "Hesabınız çok fazla başarısız deneme nedeniyle kilitlenmiştir. Lütfen daha sonra tekrar deneyin." });
+                return Response<LoginResultDto>.ErrorWithData(new LoginResultDto { Status = LoginStatus.LockedOut, ErrorMessage = "Hesabınız çok fazla başarısız deneme nedeniyle kilitlenmiştir. Lütfen daha sonra tekrar deneyin." });
 
             if (result.IsNotAllowed)
-                return new Response<LoginResultDto>(new LoginResultDto { Status = LoginStatus.NotAllowed, ErrorMessage = "Hesabınıza giriş izni yok. Lütfen e-postanızı onayladığınızdan emin olun." });
+                return Response<LoginResultDto>.ErrorWithData(new LoginResultDto { Status = LoginStatus.NotAllowed, ErrorMessage = "Hesabınıza giriş izni yok. Lütfen e-postanızı onayladığınızdan emin olun." });
 
             if (result.RequiresTwoFactor)
-                return new Response<LoginResultDto>(new LoginResultDto { Status = LoginStatus.RequiresTwoFactor });
+                return Response<LoginResultDto>.ErrorWithData(new LoginResultDto { Status = LoginStatus.RequiresTwoFactor });
 
             if (!result.Succeeded)
-                return new Response<LoginResultDto>(new LoginResultDto { Status = LoginStatus.InvalidCredentials, ErrorMessage = "Geçersiz e-posta veya şifre." });
+                return Response<LoginResultDto>.ErrorWithData(new LoginResultDto { Status = LoginStatus.InvalidCredentials, ErrorMessage = "Geçersiz e-posta veya şifre." });
 
             IRepository<ApplicationTenant> tenantRepo = _unitOfWork.GetRepository<ApplicationTenant>();
 
             ApplicationTenant tenant = await tenantRepo.FindAsync(user.TenantId);
 
             if (tenant == null)
-                return new Response<LoginResultDto>(new LoginResultDto { Status = LoginStatus.NotAllowed, ErrorMessage = "Hesabınızla ilişkili şirket bilgisi bulunamadı." });
+                return Response<LoginResultDto>.ErrorWithData(new LoginResultDto { Status = LoginStatus.NotAllowed, ErrorMessage = "Hesabınızla ilişkili şirket bilgisi bulunamadı." });
 
             List<Claim> userClaims = await GetUserClaimsIgnoringFiltersAsync(user.Id, tenant.Id);
 
@@ -73,7 +73,7 @@ namespace ST.Application.Features.Identity.Commands.LoginUser
 
             LoginResultDto resultDto = new LoginResultDto { Status = LoginStatus.Success, RequiresSetup = !tenant.IsSetupComplete };
 
-            return new Response<LoginResultDto>(resultDto);
+            return Response<LoginResultDto>.Success(resultDto);
         }
         public async Task<List<Claim>> GetUserClaimsIgnoringFiltersAsync(int userId, string tenantId)
         {

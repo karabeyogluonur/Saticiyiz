@@ -21,7 +21,7 @@ public class ErrorController : BaseController
     [Route("{statusCode}")]
     public IActionResult HttpStatusCodeHandler(int statusCode)
     {
-        var statusCodeResult = HttpContext.Features.Get<IStatusCodeReExecuteFeature>();
+        IStatusCodeReExecuteFeature statusCodeResult = HttpContext.Features.Get<IStatusCodeReExecuteFeature>();
 
         if (statusCode == 404 && statusCodeResult != null)
         {

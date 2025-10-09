@@ -1,5 +1,6 @@
 using Serilog;
 using ST.App.Mvc.Middlewares;
+using ST.Application.Interfaces.Configuration;
 
 namespace ST.App.Mvc;
 
@@ -13,13 +14,21 @@ public static class BuilderRegistration
     public static void UseSerilog(this WebApplicationBuilder? builder)
     {
         builder.Host.UseSerilog((context, services, configuration) => configuration
-       .ReadFrom.Configuration(context.Configuration)
-       .ReadFrom.Services(services)
-       .Enrich.FromLogContext());
+            .ReadFrom.Configuration(context.Configuration)
+            .ReadFrom.Services(services)
+            .Enrich.FromLogContext());
     }
     public static void UseCustomMiddlewares(this WebApplication builder)
     {
         builder.UseMiddleware<SetupMiddleware>();
+    }
+    public static async Task AddDatabaseInitializerAsync(this WebApplication builder)
+    {
+        using (IServiceScope scope = builder.Services.CreateScope())
+        {
+            IDbInitializer initializer = scope.ServiceProvider.GetRequiredService<IDbInitializer>();
+            await initializer.InitializeAsync();
+        }
     }
     public static void AddDevelopmentBuilder(this WebApplication application)
     {

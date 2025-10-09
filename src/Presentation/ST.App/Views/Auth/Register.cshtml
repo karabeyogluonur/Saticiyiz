@@ -22,6 +22,27 @@
                         <!--end::Subtitle=-->
                     </div>
                     <!--begin::Heading-->
+
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <!--begin::Alert-->
+                        <div class="alert alert-dismissible bg-danger d-flex flex-column flex-sm-row p-5">
+                            <div class="d-flex flex-column text-light pe-0 pe-sm-10">
+                                <style>
+                                    .validation-summary-errors ul {
+                                        margin: 0px;
+                                    }
+                                </style>
+                                <div asp-validation-summary="All"></div>
+                            </div>
+                            <button type="button" class="position-absolute top-0 end-0 btn btn-icon ms-sm-auto"
+                                data-bs-dismiss="alert">
+                                <i class="ki-duotone ki-cross fs-1 text-light"><span class="path1"></span><span
+                                        class="path2"></span></i>
+                            </button>
+                        </div>
+                    }
+
                     <!--begin::Separator-->
                     <div class="separator separator-content my-14"></div>
                     <!--end::Separator-->
@@ -96,17 +117,6 @@
                         <!--end::Repeat Password-->
                     </div>
                     <!--end::Input group=-->
-                    <!--begin::Accept-->
-                    <div class="fv-row mb-8">
-                        <label class="form-check form-check-inline">
-                            <input class="form-check-input" type="checkbox" name="toc" value="1" />
-                            <span class="form-check-label fw-semibold text-gray-700 fs-base ms-1">
-                                <a href="#" class="ms-1 link-primary">Sözleşme ve koşulları</a>
-                                okudum, onaylıyorum.
-                            </span>
-                        </label>
-                    </div>
-                    <!--end::Accept-->
                     <!--begin::Submit button-->
                     <div class="d-grid mb-10">
                         <button type="submit" id="kt_sign_up_submit" class="btn btn-primary">
@@ -122,9 +132,18 @@
                         </button>
                     </div>
                     <!--end::Submit button-->
+                    <!--begin::Disclaimer-->
+                    <div class="text-center mb-10">
+                        <div class="text-muted fs-7">
+                            Kaydol düğmesine tıklayarak, <a href="#">Koşullarımızı</a>, <a href="#">Gizlilik
+                                İlkemizi</a> ve <a href="#">Çerezler İlkemizi</a> kabul etmiş olursun. Bizden SMS
+                            Bildirimleri alabilir ve bu bildirimleri istediğin zaman durdurabilirsin.
+                        </div>
+                    </div>
+                    <!--end::Disclaimer-->
                     <!--begin::Sign up-->
                     <div class="text-gray-500 text-center fw-semibold fs-6">
-                        <a asp-action="Login" asp-controller="Account"
+                        <a asp-action="Login" asp-controller="Auth"
                             class="text-gray-500 text-center fw-semibold fs-6">Zaten hesabınız var mı?</a>
                     </div>
                     <!--end::Sign up-->

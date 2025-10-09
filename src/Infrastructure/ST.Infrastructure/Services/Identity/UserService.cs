@@ -17,20 +17,5 @@ namespace ST.Infrastructure.Services.Identity
             _userManager = userManager;
             _unitOfWork = unitOfWork;
         }
-
-        public async Task<Response<int>> CreateUserAsync(ApplicationUser user, string password, string tenantId)
-        {
-            ApplicationUser userWithSameEmail = await _userManager.FindByEmailAsync(user.Email);
-
-            if (userWithSameEmail != null)
-                return new Response<int>($"'{user.Email}' e-posta adresi zaten kullanılıyor.");
-
-            IdentityResult result = await _userManager.CreateAsync(user, password);
-
-            if (!result.Succeeded)
-                return new Response<int>("Kullanıcı oluşturulurken bir hata oluştu.", result.Errors.Select(e => e.Description));
-
-            return new Response<int>(user.Id, "Kullanıcı başarıyla oluşturuldu.");
-        }
     }
 }

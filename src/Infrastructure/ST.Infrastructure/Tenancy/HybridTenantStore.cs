@@ -30,7 +30,7 @@ namespace ST.Infrastructure.Tenancy
 
         public async Task<ApplicationTenant?> TryGetByIdentifierAsync(string identifier)
         {
-            var tenant = await _tenantRepository.GetAll()
+            ApplicationTenant tenant = await _tenantRepository.GetAll()
                 .AsNoTracking()
                 .FirstOrDefaultAsync(t => t.Identifier == identifier);
 
@@ -49,7 +49,7 @@ namespace ST.Infrastructure.Tenancy
 
         public async Task<ApplicationTenant?> TryGetAsync(string id)
         {
-            var tenant = await _tenantRepository.GetAll()
+            ApplicationTenant tenant = await _tenantRepository.GetAll()
                 .AsNoTracking()
                 .FirstOrDefaultAsync(t => t.Id == id);
 
@@ -69,7 +69,7 @@ namespace ST.Infrastructure.Tenancy
 
         public async Task<bool> TryAddAsync(ApplicationTenant tenant)
         {
-            var exists = await _tenantRepository.ExistsAsync(t => t.Identifier == tenant.Identifier);
+            bool exists = await _tenantRepository.ExistsAsync(t => t.Identifier == tenant.Identifier);
             if (exists)
             {
                 _logger.LogWarning("Attempted to add a tenant with a duplicate identifier: {Identifier}", tenant.Identifier);
@@ -92,7 +92,7 @@ namespace ST.Infrastructure.Tenancy
 
         public async Task<bool> TryUpdateAsync(ApplicationTenant tenant)
         {
-            var existingTenant = await _tenantRepository.GetAll().FirstOrDefaultAsync(t => t.Id == tenant.Id);
+            ApplicationTenant existingTenant = await _tenantRepository.GetAll().FirstOrDefaultAsync(t => t.Id == tenant.Id);
             if (existingTenant == null)
             {
                 _logger.LogWarning("Attempted to update a non-existent tenant with Id: {Id}", tenant.Id);
@@ -115,7 +115,7 @@ namespace ST.Infrastructure.Tenancy
 
         public async Task<bool> TryRemoveAsync(string identifier)
         {
-            var tenantToRemove = await _tenantRepository.GetAll().FirstOrDefaultAsync(t => t.Identifier == identifier);
+            ApplicationTenant tenantToRemove = await _tenantRepository.GetAll().FirstOrDefaultAsync(t => t.Identifier == identifier);
             if (tenantToRemove == null)
             {
                 _logger.LogWarning("Attempted to remove a non-existent tenant with identifier: {Identifier}", identifier);

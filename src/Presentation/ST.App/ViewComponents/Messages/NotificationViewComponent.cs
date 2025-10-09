@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using ST.Application.DTOs.Messages;
 using ST.Application.Interfaces.Messages;
 
 namespace ST.App.ViewComponents.Messages;
@@ -15,7 +16,7 @@ public class NotificationViewComponent : ViewComponent
 
     public async Task<IViewComponentResult> InvokeAsync()
     {
-        var notifications = await _notificationService.GetAllAsync();
+        IEnumerable<UINotificationDto> notifications = await _notificationService.GetAllAsync();
         return View(notifications);
     }
 }

@@ -34,9 +34,10 @@ namespace ST.Infrastructure.Services.Tenancy
             };
 
             await _applicationTenantRepository.InsertAsync(applicationTenant);
+
             applicationTenant.AddDomainEvent(new TenantCreatedEvent(applicationTenant.Id, applicationTenant.Name));
 
-            return new Response<ApplicationTenant>(applicationTenant, "Tenant başarıyla oluşturuldu.");
+            return Response<ApplicationTenant>.Success(applicationTenant, "Tenant başarıyla oluşturuldu.");
         }
     }
 }

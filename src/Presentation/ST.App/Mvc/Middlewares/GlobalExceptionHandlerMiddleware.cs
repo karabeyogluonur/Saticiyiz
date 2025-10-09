@@ -27,7 +27,7 @@ public class GlobalExceptionHandlerMiddleware
         {
             _logger.LogError(ex, "An unhandled exception has occurred. Message: {Message}", ex.Message);
 
-            var response = context.Response;
+            HttpResponse response = context.Response;
             response.ContentType = "application/json";
 
             switch (ex)
@@ -47,13 +47,13 @@ public class GlobalExceptionHandlerMiddleware
                     break;
             }
 
-            var errorResponse = new
+            object errorResponse = new
             {
                 message = ex.Message,
                 stackTrace = _env.IsDevelopment() ? ex.StackTrace : null
             };
 
-            var result = JsonSerializer.Serialize(errorResponse);
+            string result = JsonSerializer.Serialize(errorResponse);
             await response.WriteAsync(result);
         }
     }

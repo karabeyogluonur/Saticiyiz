@@ -29,6 +29,13 @@ using ST.Infrastructure.Identity;
 using ST.Application.Interfaces.Messages;
 using ST.Infrastructure.Services.Messages;
 using ST.Domain.Entities;
+using ST.Infrastructure.Services.Email;
+using Hangfire;
+using Hangfire.PostgreSql;
+using ST.Application.Interfaces.Security;
+using ST.Infrastructure.Services.Security;
+using ST.Application.Interfaces.Common;
+using ST.Infrastructure.Services.Common;
 
 namespace ST.Infrastructure.Extensions
 {
@@ -83,6 +90,13 @@ namespace ST.Infrastructure.Extensions
             services.AddScoped<IFeatureAccessService, FeatureAccessService>();
             services.AddScoped<ITenantService, TenantService>();
             services.AddScoped<INotificationService, TempDataNotificationService>();
+            services.AddScoped<IEmailSender, DefaultEmailSender>();
+            services.AddScoped<MailgunProvider>();
+            services.AddScoped<ISettingService, SettingService>();
+            services.AddHttpClient();
+            services.AddScoped<IProtectedDataService, ProtectedDataService>();
+            services.AddScoped<IUrlHelperService, UrlHelperService>();
+            services.AddScoped<IUserContext, UserContext>();
             #endregion
 
             #region Multi-Tenancy Configuration
@@ -112,6 +126,11 @@ namespace ST.Infrastructure.Extensions
             services.AddScoped<IDbInitializer, DbInitializer>();
             services.AddScoped<ISeeder, SettingSeeder>();
             services.AddScoped<ISettingSeeder, SettingSeeder>();
+            #endregion
+
+            #region Hangfire
+            services.AddHangfire(config => config.UsePostgreSqlStorage(c => c.UseNpgsqlConnection(configuration.GetConnectionString("DefaultConnection"))));
+            services.AddHangfireServer();
             #endregion
 
             return services;

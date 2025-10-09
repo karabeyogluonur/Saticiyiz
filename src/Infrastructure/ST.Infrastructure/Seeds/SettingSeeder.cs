@@ -21,14 +21,30 @@ namespace ST.Infrastructure.Seeds
 
         public async Task SeedAsync()
         {
-            if (await _settingRepository.ExistsAsync())
-            {
-                return;
-            }
+            IList<Setting> existingSettings = await _settingRepository.GetAllAsync();
+            HashSet<string> existingKeys = existingSettings.Select(s => s.Key).ToHashSet();
 
             List<Setting> settingsToSeed = DiscoverAndMapSettings();
+            HashSet<string> defaultKeys = settingsToSeed.Select(s => s.Key).ToHashSet();
 
-            await _settingRepository.InsertAsync(settingsToSeed);
+            List<Setting> missingSettings = settingsToSeed
+                .Where(s => !existingKeys.Contains(s.Key))
+                .ToList();
+
+            if (missingSettings.Any())
+            {
+                await _settingRepository.InsertAsync(missingSettings);
+            }
+
+            List<Setting> obsoleteSettings = existingSettings
+                .Where(s => !defaultKeys.Contains(s.Key))
+                .ToList();
+
+            if (obsoleteSettings.Any())
+            {
+                _settingRepository.Delete(obsoleteSettings);
+            }
+
             await _unitOfWork.SaveChangesAsync();
         }
 
@@ -60,7 +76,18 @@ namespace ST.Infrastructure.Seeds
                 foreach (PropertyInfo prop in properties)
                 {
                     string key = prefix + prop.Name;
-                    string value = prop.GetValue(defaultSettingInstance)?.ToString() ?? string.Empty;
+                    object rawValue = prop.GetValue(defaultSettingInstance);
+                    string value;
+
+                    if (prop.PropertyType.IsEnum && rawValue != null)
+                    {
+                        value = Convert.ToInt32(rawValue).ToString();
+                    }
+                    else
+                    {
+                        value = rawValue?.ToString() ?? string.Empty;
+                    }
+
                     string type = prop.PropertyType.Name;
 
                     settingsToSeed.Add(new Setting
