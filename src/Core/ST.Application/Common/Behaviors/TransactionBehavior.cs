@@ -1,8 +1,10 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
 using ST.Application.Common.Attributes;
 using ST.Application.Interfaces.Repositories;
 using ST.Domain.Events.Common;
 using System.Reflection;
+using System.Transactions;
 
 namespace ST.Application.Common.Behaviors
 {
@@ -11,51 +13,52 @@ namespace ST.Application.Common.Behaviors
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMediator _mediator;
+        private readonly ILogger<TransactionBehavior<TRequest, TResponse>> _logger;
 
-        public TransactionBehavior(IUnitOfWork unitOfWork, IMediator mediator)
+        public TransactionBehavior(IUnitOfWork unitOfWork, IMediator mediator, ILogger<TransactionBehavior<TRequest, TResponse>> logger)
         {
             _unitOfWork = unitOfWork;
             _mediator = mediator;
+            _logger = logger;
         }
 
         public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
         {
-            Type handlerType = next.Target.GetType();
-            TransactionalAttribute transactionalAttribute = handlerType.GetCustomAttribute<TransactionalAttribute>();
-
-            if (transactionalAttribute == null)
+            var transactionalAttribute = request.GetType().GetCustomAttribute<TransactionalAttribute>();
+            if (transactionalAttribute is null)
             {
                 return await next();
             }
 
+            _logger.LogInformation("----- Başlatılıyor: Transactional Operation for {RequestName} -----", typeof(TRequest).Name);
+
+            using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+
+            TResponse response;
             try
             {
-                await _unitOfWork.BeginTransactionAsync();
+                response = await next();
 
-                TResponse response = await next();
-
-                await _unitOfWork.CommitAsync();
-
-                await DispatchEvents();
-
-                return response;
+                scope.Complete();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                await _unitOfWork.RollbackAsync();
+                _logger.LogError(ex, "----- HATA: Transactional Operation for {RequestName} geri alınıyor. -----", typeof(TRequest).Name);
                 throw;
             }
-        }
 
-        private async Task DispatchEvents()
-        {
-            IEnumerable<DomainEvent> events = _unitOfWork.GetDomainEvents();
+            _logger.LogInformation("----- Tamamlandı: Transactional Operation for {RequestName} -----", typeof(TRequest).Name);
 
-            foreach (DomainEvent domainEvent in events)
-            {
-                await _mediator.Publish(domainEvent);
-            }
+            var domainEvents = _unitOfWork.GetDomainEvents();
             _unitOfWork.ClearDomainEvents();
+
+            foreach (var domainEvent in domainEvents)
+            {
+                _logger.LogInformation("Dispatching domain event: {EventName}", domainEvent.GetType().Name);
+                await _mediator.Publish(domainEvent, cancellationToken);
+            }
+
+            return response;
         }
     }
 }

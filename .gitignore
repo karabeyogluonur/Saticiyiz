@@ -463,3 +463,5 @@ private.key
 /coverage
 /documents
 /email-templates
+/code-backups
+/sql-scripts

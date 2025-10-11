@@ -1,48 +1,57 @@
-using ST.Application.Settings;
-using ST.Infrastructure.Persistence.Contexts;
-using System.Reflection;
-using ST.Domain.Entities.Configurations;
-using ST.Domain.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using ST.Application.Interfaces.Repositories;
 using ST.Application.Interfaces.Seeds;
+using ST.Application.Settings;
+using ST.Domain.Entities.Configurations;
+using ST.Domain.Interfaces;
+using System.Reflection;
 
 namespace ST.Infrastructure.Seeds
 {
     public class SettingSeeder : ISettingSeeder, ISeeder
     {
-        private readonly IUnitOfWork<ApplicationDbContext> _unitOfWork;
-        private readonly IRepository<Setting> _settingRepository;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public SettingSeeder(IUnitOfWork<ApplicationDbContext> unitOfWork)
+        public SettingSeeder(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
-            _settingRepository = _unitOfWork.GetRepository<Setting>();
         }
 
         public async Task SeedAsync()
         {
-            IList<Setting> existingSettings = await _settingRepository.GetAllAsync();
-            HashSet<string> existingKeys = existingSettings.Select(s => s.Key).ToHashSet();
 
-            List<Setting> settingsToSeed = DiscoverAndMapSettings();
-            HashSet<string> defaultKeys = settingsToSeed.Select(s => s.Key).ToHashSet();
+            var existingSettings = await _unitOfWork.Settings.GetAll()
+                .IgnoreQueryFilters()
+                .Where(s => s.TenantId == null)
+                .ToListAsync();
 
-            List<Setting> missingSettings = settingsToSeed
+            var existingKeys = existingSettings.Select(s => s.Key).ToHashSet();
+
+            var settingsToSeed = DiscoverAndMapSettings();
+            var defaultKeys = settingsToSeed.Select(s => s.Key).ToHashSet();
+
+            var missingSettings = settingsToSeed
                 .Where(s => !existingKeys.Contains(s.Key))
                 .ToList();
 
             if (missingSettings.Any())
             {
-                await _settingRepository.InsertAsync(missingSettings);
+                foreach (var setting in missingSettings)
+                {
+                    await _unitOfWork.Settings.AddAsync(setting);
+                }
             }
 
-            List<Setting> obsoleteSettings = existingSettings
+            var obsoleteSettings = existingSettings
                 .Where(s => !defaultKeys.Contains(s.Key))
                 .ToList();
 
             if (obsoleteSettings.Any())
             {
-                _settingRepository.Delete(obsoleteSettings);
+                foreach (var setting in obsoleteSettings)
+                {
+                    _unitOfWork.Settings.Remove(setting);
+                }
             }
 
             await _unitOfWork.SaveChangesAsync();
@@ -50,18 +59,18 @@ namespace ST.Infrastructure.Seeds
 
         private List<Setting> DiscoverAndMapSettings()
         {
-            Assembly applicationAssembly = typeof(SubscriptionSetting).Assembly;
+            var applicationAssembly = typeof(SubscriptionSetting).Assembly;
 
-            List<Type> settingTypes = applicationAssembly.GetTypes()
+            var settingTypes = applicationAssembly.GetTypes()
                 .Where(t => typeof(ISetting).IsAssignableFrom(t)
                          && t.IsClass
                          && !t.IsAbstract
                          && t.GetConstructor(Type.EmptyTypes) != null)
                 .ToList();
 
-            List<Setting> settingsToSeed = new List<Setting>();
+            var settingsToSeed = new List<Setting>();
 
-            foreach (Type settingType in settingTypes)
+            foreach (var settingType in settingTypes)
             {
                 object defaultSettingInstance = Activator.CreateInstance(settingType);
 
@@ -96,7 +105,6 @@ namespace ST.Infrastructure.Seeds
                         Value = value,
                         Type = type,
                         TenantId = null,
-
                         CreatedBy = "System.Seeder",
                         CreatedDate = DateTime.UtcNow
                     });

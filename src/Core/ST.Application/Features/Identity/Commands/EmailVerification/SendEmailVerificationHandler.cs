@@ -50,10 +50,8 @@ public class SendEmailVerificationHandler : IRequestHandler<SendEmailVerificatio
             IdentityToken = identityToken
         };
 
-        // Token'ı koru / şifrele
         string verificationProtectedData = _protectedDataService.Protect(payload, DataProtectionPurposes.EmailVerification);
 
-        // Doğrulama linki oluştur
         string verificationUrl = _urlHelperService.BuildAbsoluteUrl("/Auth/VerifyEmail",
             new Dictionary<string, string> { { "token", verificationProtectedData } }
         );

@@ -1,8 +1,6 @@
-using Finbuckle.MultiTenant;
 using Serilog.Context;
+using ST.Application.Interfaces.Tenancy;
 using System.Security.Claims;
-using ST.Domain.Entities;
-using Finbuckle.MultiTenant.Abstractions;
 
 namespace ST.App.Mvc.Middlewares;
 
@@ -14,14 +12,14 @@ public class LogContextMiddleware
     {
         _next = next;
     }
-
-    public async Task InvokeAsync(HttpContext context)
+    public async Task InvokeAsync(HttpContext context, ICurrentTenantStore currentTenantStore)
     {
-        var tenant = context.GetMultiTenantContext<ApplicationTenant>()?.TenantInfo;
-        string userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var tenantId = currentTenantStore.Id?.ToString() ?? "none";
 
-        using (LogContext.PushProperty("TenantId", tenant?.Identifier ?? "none"))
-        using (LogContext.PushProperty("UserId", userId ?? "anonymous"))
+        string userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+
+        using (LogContext.PushProperty("TenantId", tenantId))
+        using (LogContext.PushProperty("UserId", userId))
         {
             await _next(context);
         }

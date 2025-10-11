@@ -7,9 +7,7 @@ namespace ST.Domain.Entities.Configurations
         public string Key { get; set; } = string.Empty;
         public string Value { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
-
-        public string? TenantId { get; set; }
-
+        public int? TenantId { get; set; }
         public string CreatedBy { get; set; } = default!;
         public DateTime CreatedDate { get; set; }
         public string? LastModifiedBy { get; set; }

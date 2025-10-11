@@ -6,17 +6,16 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace ST.Infrastructure.Migrations
 {
-    /// <inheritdoc />
     public partial class Initial : Migration
     {
-        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
                 name: "ApplicationTenants",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "text", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Identifier = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                     Name = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
                     ConnectionString = table.Column<string>(type: "text", nullable: true),
@@ -36,7 +35,20 @@ namespace ST.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "FeatureDefinitions",
+                name: "Cities",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Cities", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "FeatureDefinition",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
@@ -54,7 +66,7 @@ namespace ST.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_FeatureDefinitions", x => x.Id);
+                    table.PrimaryKey("PK_FeatureDefinition", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -65,7 +77,7 @@ namespace ST.Infrastructure.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     Description = table.Column<string>(type: "text", nullable: false),
-                    Price = table.Column<decimal>(type: "numeric", nullable: false),
+                    Price = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     IsDefault = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: false),
@@ -90,7 +102,7 @@ namespace ST.Infrastructure.Migrations
                     Key = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
                     Value = table.Column<string>(type: "text", nullable: false),
                     Type = table.Column<string>(type: "text", nullable: false),
-                    TenantId = table.Column<string>(type: "text", nullable: true),
+                    TenantId = table.Column<int>(type: "integer", nullable: true),
                     CreatedBy = table.Column<string>(type: "text", nullable: false),
                     CreatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     LastModifiedBy = table.Column<string>(type: "text", nullable: true),
@@ -110,8 +122,8 @@ namespace ST.Infrastructure.Migrations
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    TenantId = table.Column<string>(type: "text", nullable: false),
                     Description = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
+                    TenantId = table.Column<int>(type: "integer", nullable: false),
                     Name = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     NormalizedName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     ConcurrencyStamp = table.Column<string>(type: "text", nullable: true)
@@ -135,8 +147,8 @@ namespace ST.Infrastructure.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     FirstName = table.Column<string>(type: "text", nullable: false),
                     LastName = table.Column<string>(type: "text", nullable: false),
+                    TenantId = table.Column<int>(type: "integer", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                     HasAcceptedTerms = table.Column<bool>(type: "boolean", nullable: false),
                     TermsAcceptedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     IsSubscribedToNewsletter = table.Column<bool>(type: "boolean", nullable: false),
@@ -164,11 +176,31 @@ namespace ST.Infrastructure.Migrations
                         column: x => x.TenantId,
                         principalTable: "ApplicationTenants",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "PlanFeatures",
+                name: "Districts",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    CityId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Districts", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Districts_Cities_CityId",
+                        column: x => x.CityId,
+                        principalTable: "Cities",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PlanFeature",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
@@ -179,15 +211,15 @@ namespace ST.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_PlanFeatures", x => x.Id);
+                    table.PrimaryKey("PK_PlanFeature", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_PlanFeatures_FeatureDefinitions_FeatureDefinitionId",
+                        name: "FK_PlanFeature_FeatureDefinition_FeatureDefinitionId",
                         column: x => x.FeatureDefinitionId,
-                        principalTable: "FeatureDefinitions",
+                        principalTable: "FeatureDefinition",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_PlanFeatures_Plans_PlanId",
+                        name: "FK_PlanFeature_Plans_PlanId",
                         column: x => x.PlanId,
                         principalTable: "Plans",
                         principalColumn: "Id",
@@ -200,8 +232,8 @@ namespace ST.Infrastructure.Migrations
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    TenantId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                     PlanId = table.Column<int>(type: "integer", nullable: false),
+                    TenantId = table.Column<int>(type: "integer", nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
                     CurrentPeriodEndDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: false),
@@ -220,7 +252,7 @@ namespace ST.Infrastructure.Migrations
                         column: x => x.TenantId,
                         principalTable: "ApplicationTenants",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Subscriptions_Plans_PlanId",
                         column: x => x.PlanId,
@@ -237,8 +269,7 @@ namespace ST.Infrastructure.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     RoleId = table.Column<int>(type: "integer", nullable: false),
                     ClaimType = table.Column<string>(type: "text", nullable: true),
-                    ClaimValue = table.Column<string>(type: "text", nullable: true),
-                    TenantId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false)
+                    ClaimValue = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -259,19 +290,11 @@ namespace ST.Infrastructure.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     UserId = table.Column<int>(type: "integer", nullable: false),
                     ClaimType = table.Column<string>(type: "text", nullable: true),
-                    ClaimValue = table.Column<string>(type: "text", nullable: true),
-                    Discriminator = table.Column<string>(type: "character varying(34)", maxLength: 34, nullable: false),
-                    TenantId = table.Column<string>(type: "text", nullable: true)
+                    ClaimValue = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AspNetUserClaims", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_AspNetUserClaims_ApplicationTenants_TenantId",
-                        column: x => x.TenantId,
-                        principalTable: "ApplicationTenants",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_AspNetUserClaims_AspNetUsers_UserId",
                         column: x => x.UserId,
@@ -287,8 +310,7 @@ namespace ST.Infrastructure.Migrations
                     LoginProvider = table.Column<string>(type: "text", nullable: false),
                     ProviderKey = table.Column<string>(type: "text", nullable: false),
                     ProviderDisplayName = table.Column<string>(type: "text", nullable: true),
-                    UserId = table.Column<int>(type: "integer", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false)
+                    UserId = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -306,19 +328,11 @@ namespace ST.Infrastructure.Migrations
                 columns: table => new
                 {
                     UserId = table.Column<int>(type: "integer", nullable: false),
-                    RoleId = table.Column<int>(type: "integer", nullable: false),
-                    Discriminator = table.Column<string>(type: "character varying(21)", maxLength: 21, nullable: false),
-                    TenantId = table.Column<string>(type: "text", nullable: true)
+                    RoleId = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AspNetUserRoles", x => new { x.UserId, x.RoleId });
-                    table.ForeignKey(
-                        name: "FK_AspNetUserRoles_ApplicationTenants_TenantId",
-                        column: x => x.TenantId,
-                        principalTable: "ApplicationTenants",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_AspNetUserRoles_AspNetRoles_RoleId",
                         column: x => x.RoleId,
@@ -340,8 +354,7 @@ namespace ST.Infrastructure.Migrations
                     UserId = table.Column<int>(type: "integer", nullable: false),
                     LoginProvider = table.Column<string>(type: "text", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
-                    Value = table.Column<string>(type: "text", nullable: true),
-                    TenantId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false)
+                    Value = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -352,6 +365,57 @@ namespace ST.Infrastructure.Migrations
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "BillingProfiles",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    TenantId = table.Column<int>(type: "integer", nullable: false),
+                    BillingAccountType = table.Column<int>(type: "integer", nullable: false),
+                    Email = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    PhoneNumber = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
+                    Address = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    CityId = table.Column<int>(type: "integer", nullable: false),
+                    DistrictId = table.Column<int>(type: "integer", nullable: false),
+                    PostalCode = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
+                    IndividualFirstName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    IndividualLastName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    IndividualIdentityNumber = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
+                    CorporateCompanyName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    CorporateTaxOffice = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    CorporateTaxNumber = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    CreatedBy = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    CreatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    LastModifiedBy = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    LastModifiedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    DeletedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    DeletedBy = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BillingProfiles", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_BillingProfiles_ApplicationTenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "ApplicationTenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_BillingProfiles_Cities_CityId",
+                        column: x => x.CityId,
+                        principalTable: "Cities",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_BillingProfiles_Districts_DistrictId",
+                        column: x => x.DistrictId,
+                        principalTable: "Districts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateIndex(
@@ -366,21 +430,14 @@ namespace ST.Infrastructure.Migrations
                 column: "RoleId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Role_Tenant_Name",
+                name: "IX_AspNetRoles_TenantId",
                 table: "AspNetRoles",
-                columns: new[] { "TenantId", "NormalizedName" },
-                unique: true);
+                column: "TenantId");
 
             migrationBuilder.CreateIndex(
                 name: "RoleNameIndex",
                 table: "AspNetRoles",
-                column: "NormalizedName",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_AspNetUserClaims_TenantId",
-                table: "AspNetUserClaims",
-                column: "TenantId");
+                column: "NormalizedName");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetUserClaims_UserId",
@@ -396,11 +453,6 @@ namespace ST.Infrastructure.Migrations
                 name: "IX_AspNetUserRoles_RoleId",
                 table: "AspNetUserRoles",
                 column: "RoleId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_AspNetUserRoles_TenantId",
-                table: "AspNetUserRoles",
-                column: "TenantId");
 
             migrationBuilder.CreateIndex(
                 name: "EmailIndex",
@@ -419,21 +471,47 @@ namespace ST.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_PlanFeatures_FeatureDefinitionId",
-                table: "PlanFeatures",
+                name: "IX_BillingProfiles_CityId",
+                table: "BillingProfiles",
+                column: "CityId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BillingProfiles_DistrictId",
+                table: "BillingProfiles",
+                column: "DistrictId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BillingProfiles_TenantId",
+                table: "BillingProfiles",
+                column: "TenantId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Cities_Name",
+                table: "Cities",
+                column: "Name",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Districts_CityId_Name",
+                table: "Districts",
+                columns: new[] { "CityId", "Name" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PlanFeature_FeatureDefinitionId",
+                table: "PlanFeature",
                 column: "FeatureDefinitionId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PlanFeatures_PlanId",
-                table: "PlanFeatures",
+                name: "IX_PlanFeature_PlanId",
+                table: "PlanFeature",
                 column: "PlanId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Settings_Key_TenantId",
+                name: "IX_Settings_Key",
                 table: "Settings",
-                columns: new[] { "Key", "TenantId" },
-                unique: true,
-                filter: "\"TenantId\" IS NOT NULL");
+                column: "Key",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Subscriptions_PlanId",
@@ -446,7 +524,6 @@ namespace ST.Infrastructure.Migrations
                 column: "TenantId");
         }
 
-        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
@@ -465,7 +542,10 @@ namespace ST.Infrastructure.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
-                name: "PlanFeatures");
+                name: "BillingProfiles");
+
+            migrationBuilder.DropTable(
+                name: "PlanFeature");
 
             migrationBuilder.DropTable(
                 name: "Settings");
@@ -480,13 +560,19 @@ namespace ST.Infrastructure.Migrations
                 name: "AspNetUsers");
 
             migrationBuilder.DropTable(
-                name: "FeatureDefinitions");
+                name: "Districts");
+
+            migrationBuilder.DropTable(
+                name: "FeatureDefinition");
 
             migrationBuilder.DropTable(
                 name: "Plans");
 
             migrationBuilder.DropTable(
                 name: "ApplicationTenants");
+
+            migrationBuilder.DropTable(
+                name: "Cities");
         }
     }
 }

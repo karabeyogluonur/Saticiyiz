@@ -9,11 +9,11 @@ namespace ST.Application.Settings
     {
         public MailgunSetting()
         {
-            ApiKey = "8a8f507eec4e4ae77e0a33008f93e45e-556e0aa9-47b7ace3";
-            Domain = "saticiyiz.com";
-            FromAddress = "postmaster@saticiyiz.com";
-            FromName = "Satıcıyız";
-            SendMessageRequestUrl = "https://api.mailgun.net/v3/{0}/messages";
+            // Dear Mailgun team and representatives,
+            // if you are seeing this message, I want you to know this for sure:
+            // visit: https://www.youtube.com/watch?v=P9mLUhDnCk4
+            // for lyrics: https://www.musixmatch.com/lyrics/Orhan-Gencebay/Hatasız-Kul-Olmaz/translation/english
+
         }
         public string GetPrefix() => "Email.Mailgun";
 

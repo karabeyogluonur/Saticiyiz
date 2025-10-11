@@ -7,9 +7,9 @@ using System.IO;
 namespace ST.Infrastructure.Persistence
 {
 
-    public class ApplicationDbContextFactory : IDesignTimeDbContextFactory<ApplicationDbContext>
+    public class SharedDbContextFactory : IDesignTimeDbContextFactory<SharedDbContext>
     {
-        public ApplicationDbContext CreateDbContext(string[] args)
+        public SharedDbContext CreateDbContext(string[] args)
         {
             string basePath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "Presentation", "ST.App"));
 
@@ -27,12 +27,12 @@ namespace ST.Infrastructure.Persistence
                 throw new InvalidOperationException("The 'DefaultConnection' connection string was not found in appsettings.json.");
             }
 
-            var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
+            var optionsBuilder = new DbContextOptionsBuilder<SharedDbContext>();
 
             optionsBuilder.UseNpgsql(connectionString,
-                npgsqlOptions => npgsqlOptions.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName));
+                npgsqlOptions => npgsqlOptions.MigrationsAssembly(typeof(SharedDbContext).Assembly.FullName));
 
-            return new ApplicationDbContext(optionsBuilder.Options);
+            return new SharedDbContext(optionsBuilder.Options);
         }
     }
 }

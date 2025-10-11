@@ -106,6 +106,7 @@ public class AuthController : BaseController
     public async Task<IActionResult> Login(LoginViewModel loginViewModel, string returnUrl = null)
     {
         ViewData["ReturnUrl"] = returnUrl;
+
         if (ModelState.IsValid)
         {
             Response<LoginResultDto> result = await _mediator.Send(_mapper.Map<LoginUserCommand>(loginViewModel));

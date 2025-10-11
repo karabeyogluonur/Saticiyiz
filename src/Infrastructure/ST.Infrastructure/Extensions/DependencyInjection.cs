@@ -1,21 +1,11 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MediatR;
-using Finbuckle.MultiTenant;
-using System.Security.Claims;
-using ST.Application.Interfaces.Identity;
-using ST.Infrastructure.Services.Identity;
 using ST.Application.Interfaces.Subscriptions;
 using ST.Infrastructure.Services.Subscriptions;
-using ST.Infrastructure.Tenancy;
-using ST.Infrastructure.Security.Authorization;
-using ST.Application.Common.Authorization;
 using ST.Application.Common.Behaviors;
-using ST.Application.Common.Constants;
 using ST.Application.Interfaces.Configuration;
 using ST.Domain.Interfaces;
 using ST.Infrastructure.Services.Configuration;
@@ -24,11 +14,8 @@ using ST.Infrastructure.Persistence.Contexts;
 using ST.Infrastructure.Seeds;
 using ST.Domain.Entities.Identity;
 using ST.Application.Interfaces.Tenancy;
-using ST.Infrastructure.Services.Tenancy;
-using ST.Infrastructure.Identity;
 using ST.Application.Interfaces.Messages;
 using ST.Infrastructure.Services.Messages;
-using ST.Domain.Entities;
 using ST.Infrastructure.Services.Email;
 using Hangfire;
 using Hangfire.PostgreSql;
@@ -36,6 +23,9 @@ using ST.Application.Interfaces.Security;
 using ST.Infrastructure.Services.Security;
 using ST.Application.Interfaces.Common;
 using ST.Infrastructure.Services.Common;
+using ST.Infrastructure.Tenancy;
+using ST.Application.Interfaces.Repositories;
+using ST.Infrastructure.Persistence.Repositories;
 
 namespace ST.Infrastructure.Extensions
 {
@@ -44,9 +34,13 @@ namespace ST.Infrastructure.Extensions
         public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
         {
             #region Database Configuration
-            services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")).EnableSensitiveDataLogging())
-                .AddUnitOfWork<ApplicationDbContext>();
+            services.AddDbContext<SharedDbContext>(options =>
+            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")).EnableSensitiveDataLogging());
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+            services.AddDbContext<TenantDbContext>(options =>
+            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")).EnableSensitiveDataLogging());
+
             #endregion
 
             #region Identity Configuration
@@ -69,9 +63,8 @@ namespace ST.Infrastructure.Extensions
                 options.User.RequireUniqueEmail = true;
 
             })
-            .AddEntityFrameworkStores<ApplicationDbContext>()
-            .AddDefaultTokenProviders()
-            .AddRoleValidator<TenantRoleValidator<ApplicationRole>>();
+            .AddEntityFrameworkStores<SharedDbContext>()
+            .AddDefaultTokenProviders();
 
             services.ConfigureApplicationCookie(options =>
             {
@@ -85,10 +78,7 @@ namespace ST.Infrastructure.Extensions
 
             #region Core Services
             services.AddHttpContextAccessor();
-            services.AddScoped<IUserService, UserService>();
-            services.AddTransient<IRoleService, RoleService>();
             services.AddScoped<IFeatureAccessService, FeatureAccessService>();
-            services.AddScoped<ITenantService, TenantService>();
             services.AddScoped<INotificationService, TempDataNotificationService>();
             services.AddScoped<IEmailSender, DefaultEmailSender>();
             services.AddScoped<MailgunProvider>();
@@ -97,25 +87,12 @@ namespace ST.Infrastructure.Extensions
             services.AddScoped<IProtectedDataService, ProtectedDataService>();
             services.AddScoped<IUrlHelperService, UrlHelperService>();
             services.AddScoped<IUserContext, UserContext>();
+            services.AddScoped<ICurrentTenantStore, CurrentTenantStore>();
             #endregion
 
-            #region Multi-Tenancy Configuration
-            services.AddMultiTenant<ApplicationTenant>()
-                .WithStore<HybridTenantStore>(ServiceLifetime.Scoped)
-                .WithDelegateStrategy(context =>
-                {
-                    string? tenantId = (context as HttpContext)?.User.FindFirstValue(CustomClaims.TenantId);
-                    return Task.FromResult(tenantId);
-                });
-            #endregion
 
             #region Authorization Configuration
-            services.AddScoped<IAuthorizationHandler, TenantMemberHandler>();
-            services.AddAuthorization(options =>
-            {
-                options.AddPolicy("MustBeMemberOfTenant", policy =>
-                    policy.AddRequirements(new TenantMemberRequirement()));
-            });
+            services.AddAuthorization();
             #endregion
 
             #region MediatR Pipeline Behaviors
@@ -126,6 +103,7 @@ namespace ST.Infrastructure.Extensions
             services.AddScoped<IDbInitializer, DbInitializer>();
             services.AddScoped<ISeeder, SettingSeeder>();
             services.AddScoped<ISettingSeeder, SettingSeeder>();
+            services.AddScoped<IPlanSeeder, PlanSeeder>();
             #endregion
 
             #region Hangfire

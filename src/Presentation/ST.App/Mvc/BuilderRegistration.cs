@@ -20,7 +20,9 @@ public static class BuilderRegistration
     }
     public static void UseCustomMiddlewares(this WebApplication builder)
     {
-        builder.UseMiddleware<SetupMiddleware>();
+        builder.UseMiddleware<LogContextMiddleware>();
+        builder.UseMiddleware<TenantResolverMiddleware>();
+        builder.UseMiddleware<GlobalExceptionHandlerMiddleware>();
     }
     public static async Task AddDatabaseInitializerAsync(this WebApplication builder)
     {
@@ -62,4 +64,3 @@ public static class BuilderRegistration
             pattern: "{controller=Home}/{action=Index}/{id?}");
     }
 }
-

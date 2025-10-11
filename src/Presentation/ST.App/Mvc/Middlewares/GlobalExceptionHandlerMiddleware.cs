@@ -41,7 +41,6 @@ public class GlobalExceptionHandlerMiddleware
                     response.StatusCode = (int)HttpStatusCode.NotFound;
                     break;
 
-
                 default:
                     response.StatusCode = (int)HttpStatusCode.InternalServerError;
                     break;

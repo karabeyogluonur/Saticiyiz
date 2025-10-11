@@ -1,32 +1,27 @@
-using ST.Application.Exceptions;
-using ST.Application.Interfaces.Subscriptions;
-using ST.Domain.Enums;
-using ST.Infrastructure.Tenancy;
-using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Finbuckle.MultiTenant;
-using System.Globalization;
-using ST.Domain.Entities.Subscriptions;
-using ST.Infrastructure.Persistence.Contexts;
+using ST.Application.Exceptions;
 using ST.Application.Interfaces.Repositories;
-using ST.Domain.Entities;
+using ST.Application.Interfaces.Subscriptions;
+using ST.Application.Interfaces.Tenancy;
+using ST.Domain.Enums;
+using System.Globalization;
 
 namespace ST.Infrastructure.Services.Subscriptions;
 
 public class FeatureAccessService : IFeatureAccessService
 {
-    private readonly IUnitOfWork<ApplicationDbContext> _unitOfWork;
-    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly ICurrentTenantStore _currentTenantStore;
     private readonly ILogger<FeatureAccessService> _logger;
 
     public FeatureAccessService(
-        IUnitOfWork<ApplicationDbContext> unitOfWork,
-        IHttpContextAccessor httpContextAccessor,
+        IUnitOfWork unitOfWork,
+        ICurrentTenantStore currentTenantStore,
         ILogger<FeatureAccessService> logger)
     {
         _unitOfWork = unitOfWork;
-        _httpContextAccessor = httpContextAccessor;
+        _currentTenantStore = currentTenantStore;
         _logger = logger;
     }
 
@@ -36,24 +31,23 @@ public class FeatureAccessService : IFeatureAccessService
         if (!hasAccess)
         {
             _logger.LogWarning("Tenant '{TenantId}' attempted to access forbidden feature '{FeatureKey}'.",
-                GetCurrentTenantId(), featureKey);
+                _currentTenantStore.Id, featureKey);
 
             throw new ForbiddenAccessException($"Your current plan does not allow access to this feature: {featureKey}.");
         }
     }
 
-    /// <inheritdoc />
     public async Task<T> GetFeatureValueAsync<T>(string featureKey)
     {
-        var tenantId = GetCurrentTenantId();
-
-        if (tenantId is null)
+        if (_currentTenantStore.Id is null)
         {
             _logger.LogCritical("Feature access attempted without a valid tenant context.");
             throw new UnauthorizedAccessException("Cannot determine feature access without tenant context.");
         }
 
-        var planId = await GetCurrentPlanIdAsync(tenantId);
+        var tenantId = _currentTenantStore.Id.Value;
+
+        var planId = await GetCurrentPlanIdAsync();
 
         if (planId is null)
         {
@@ -77,33 +71,26 @@ public class FeatureAccessService : IFeatureAccessService
                 return default!;
             }
         }
+
         return default!;
     }
 
-    private async Task<int?> GetCurrentPlanIdAsync(string tenantId)
+    private async Task<int?> GetCurrentPlanIdAsync()
     {
-        var subscriptionRepository = _unitOfWork.GetRepository<Subscription>();
 
-        var subscription = await subscriptionRepository.GetAll()
+        var subscription = await _unitOfWork.Subscriptions.GetAll()
             .AsNoTracking()
-            .FirstOrDefaultAsync(s => s.TenantId == tenantId && s.Status == SubscriptionStatus.Active);
+            .FirstOrDefaultAsync(s => s.Status == SubscriptionStatus.Active);
 
         return subscription?.PlanId;
     }
 
     private async Task<Dictionary<string, string>> GetPlanFeaturesAsync(int planId)
     {
-        var planFeatureRepository = _unitOfWork.GetRepository<PlanFeature>();
-
-        return await planFeatureRepository.GetAll()
+        return await _unitOfWork.PlanFeatures.GetAll()
             .AsNoTracking()
             .Include(pf => pf.FeatureDefinition)
             .Where(pf => pf.PlanId == planId)
             .ToDictionaryAsync(pf => pf.FeatureDefinition.Key, pf => pf.Value);
-    }
-
-    private string? GetCurrentTenantId()
-    {
-        return _httpContextAccessor.HttpContext?.GetMultiTenantContext<ApplicationTenant>()?.TenantInfo?.Id;
     }
 }

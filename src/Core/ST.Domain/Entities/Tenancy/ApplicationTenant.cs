@@ -1,20 +1,12 @@
-using Finbuckle.MultiTenant.Abstractions;
 using ST.Domain.Entities.Common;
 using ST.Domain.Entities.Subscriptions;
+using ST.Domain.Interfaces;
 
 namespace ST.Domain.Entities
 {
-    public class ApplicationTenant : BaseEntity<string>, IAuditableEntity, ISoftDeleteEntity, ITenantInfo
+    public class ApplicationTenant : BaseEntity<int>, IAuditableEntity, ISoftDeleteEntity, ITenantInfo
     {
         public ApplicationTenant() { }
-
-        string? ITenantInfo.Id
-        {
-            get => this.Id;
-            set => this.Id = value ?? throw new ArgumentNullException(nameof(value), "Tenant Id cannot be null.");
-        }
-
-        public void Set_Id(string id) => this.Id = id;
 
         public string Identifier { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;

@@ -1,17 +1,15 @@
 using System;
 using ST.Domain.Events.Common;
 
-namespace ST.Domain.Events.Tenancy
+namespace ST.Domain.Tenancy
 {
     public class TenantCreatedEvent : DomainEvent
     {
-        public string TenantId { get; }
-        public string TenantName { get; }
+        public int TenantId { get; }
 
-        public TenantCreatedEvent(string tenantId, string tenantName)
+        public TenantCreatedEvent(int tenantId)
         {
             TenantId = tenantId;
-            TenantName = tenantName;
         }
     }
 }

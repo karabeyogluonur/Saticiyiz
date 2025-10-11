@@ -6,5 +6,9 @@ namespace ST.Application.Interfaces.Configuration
     {
         Task<TSetting> GetGlobalSettingsAsync<TSetting>()
             where TSetting : ISetting, new();
+
+        Task<T> GetValueAsync<T>(string key);
+
+        Task UpdateValueAsync<T>(string key, T value);
     }
 }

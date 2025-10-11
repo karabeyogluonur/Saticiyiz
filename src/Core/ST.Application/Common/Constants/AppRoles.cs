@@ -2,8 +2,7 @@ namespace ST.Application.Common.Constants
 {
     public static class AppRoles
     {
-        public const string TenantOwner = "TenantOwner";
-        public const string TenantMember = "TenantMember";
-        public const string SuperAdmin = "SuperAdmin";
+        public const string Owner = "Owner";
+        public const string Member = "Member";
     }
 }

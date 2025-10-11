@@ -1,11 +1,14 @@
 using Hangfire;
 using ST.App.Mvc;
-using ST.Application.Interfaces.Configuration;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSerilogServices();
 builder.UseSerilog();
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.Name = "DevIdentityCookie_" + Guid.NewGuid();
+});
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddBaseServices();
 builder.Services.AddLayerServices(builder.Configuration);

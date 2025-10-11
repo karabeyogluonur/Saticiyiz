@@ -1,196 +1,132 @@
-using Finbuckle.MultiTenant.EntityFrameworkCore;
-using System.Data;
-using System.Text.RegularExpressions;
-using System.Transactions;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Storage;
 using ST.Application.Interfaces.Repositories;
+using ST.Domain.Entities;
+using ST.Domain.Entities.Identity;
+using ST.Domain.Entities.Subscriptions;
+using ST.Domain.Entities.Billing;
+using ST.Domain.Entities.Lookup;
 using ST.Domain.Events.Common;
+using ST.Infrastructure.Persistence.Contexts;
+using System.Transactions;
+using ST.Domain.Entities.Configurations;
 
-namespace ST.Infrastructure.Persistence.Repositories;
-
-public class UnitOfWork<TContext> : IRepositoryFactory, IUnitOfWork<TContext>, IUnitOfWork where TContext : DbContext
+namespace ST.Infrastructure.Persistence.Repositories
 {
-    private readonly TContext _context;
-    private bool disposed = false;
-    private Dictionary<Type, object> repositories;
-    private IDbContextTransaction _transaction;
-
-    public UnitOfWork(TContext context)
+    public class UnitOfWork : IUnitOfWork
     {
-        _context = context ?? throw new ArgumentNullException(nameof(context));
-    }
+        private readonly SharedDbContext _sharedContext;
+        private readonly TenantDbContext _tenantContext;
 
-    public TContext DbContext => _context;
+        private IUserRepository _users;
+        private IRoleRepository _roles;
+        private ITenantRepository _tenants;
+        private ISubscriptionRepository _subscriptions;
+        private ISettingRepository _settings;
+        private IPlanRepository _plans;
+        private IPlanFeatureRepository _planFeatures;
+        private IFeatureDefinitionRepository _featureDefinitions;
+        private IBillingProfileRepository _billingProfiles;
+        private ICityRepository _cities;
+        private IDistrictRepository _districts;
 
-    public void ChangeDatabase(string database)
-    {
-        System.Data.Common.DbConnection connection = _context.Database.GetDbConnection();
-        if (connection.State.HasFlag(ConnectionState.Open))
+        public UnitOfWork(SharedDbContext sharedContext, TenantDbContext tenantContext)
         {
-            connection.ChangeDatabase(database);
-        }
-        else
-        {
-            string connectionString = Regex.Replace(connection.ConnectionString.Replace(" ", ""), @"(?<=[Dd]atabase=)\w+(?=;)", database, RegexOptions.Singleline);
-            connection.ConnectionString = connectionString;
+            _sharedContext = sharedContext ?? throw new ArgumentNullException(nameof(sharedContext));
+            _tenantContext = tenantContext ?? throw new ArgumentNullException(nameof(tenantContext));
         }
 
-        IEnumerable<IEntityType> items = _context.Model.GetEntityTypes();
-        foreach (IEntityType item in items)
+        public IUserRepository Users => _users ??= new UserRepository(_sharedContext);
+        public IRoleRepository Roles => _roles ??= new RoleRepository(_sharedContext);
+        public ITenantRepository Tenants => _tenants ??= new TenantRepository(_sharedContext);
+        public ISubscriptionRepository Subscriptions => _subscriptions ??= new SubscriptionRepository(_sharedContext);
+
+        public ISettingRepository Settings => _settings ??= new SettingRepository(_sharedContext);
+
+        public IPlanRepository Plans => _plans ??= new PlanRepository(_sharedContext);
+
+        public IPlanFeatureRepository PlanFeatures => _planFeatures ??= new PlanFeatureRepository(_sharedContext);
+
+        public IFeatureDefinitionRepository FeatureDefinitions => _featureDefinitions ??= new FeatureDefinitionRepository(_sharedContext);
+
+        public IBillingProfileRepository BillingProfiles => _billingProfiles ??= new BillingProfileRepository(_sharedContext);
+
+        public ICityRepository Cities => _cities ??= new CityRepository(_sharedContext);
+
+        public IDistrictRepository Districts => _districts ??= new DistrictRepository(_sharedContext);
+
+        public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            if (item is IConventionEntityType entityType)
+            using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
-                entityType.SetSchema(database);
-            }
-        }
-    }
+                var sharedResult = await _sharedContext.SaveChangesAsync(cancellationToken);
+                var tenantResult = await _tenantContext.SaveChangesAsync(cancellationToken);
 
-    public IRepository<TEntity> GetRepository<TEntity>(bool hasCustomRepository = false) where TEntity : class
-    {
-        if (repositories == null)
-        {
-            repositories = new Dictionary<Type, object>();
-        }
+                scope.Complete();
 
-        if (hasCustomRepository)
-        {
-            IRepository<TEntity> customRepo = _context.GetService<IRepository<TEntity>>();
-            if (customRepo != null)
-            {
-                return customRepo;
-            }
-        }
-
-        Type type = typeof(TEntity);
-        if (!repositories.ContainsKey(type))
-        {
-            repositories[type] = new Repository<TEntity>(_context);
-        }
-
-        return (IRepository<TEntity>)repositories[type];
-    }
-
-    public int ExecuteSqlCommand(string sql, params object[] parameters) => _context.Database.ExecuteSqlRaw(sql, parameters);
-
-    public IQueryable<TEntity> FromSql<TEntity>(string sql, params object[] parameters) where TEntity : class => _context.Set<TEntity>().FromSqlRaw(sql, parameters);
-
-    public int SaveChanges(bool ensureAutoHistory = false)
-    {
-        if (ensureAutoHistory)
-        {
-            _context.EnsureAutoHistory();
-        }
-
-        return _context.SaveChanges();
-    }
-
-    public async Task<int> SaveChangesAsync(bool ensureAutoHistory = false)
-    {
-        if (ensureAutoHistory)
-        {
-            _context.EnsureAutoHistory();
-        }
-
-        return await _context.SaveChangesAsync();
-    }
-
-    public async Task<int> SaveChangesAsync(bool ensureAutoHistory = false, params IUnitOfWork[] unitOfWorks)
-    {
-        using (TransactionScope ts = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
-        {
-            int count = 0;
-            foreach (IUnitOfWork unitOfWork in unitOfWorks)
-            {
-                count += await unitOfWork.SaveChangesAsync(ensureAutoHistory).ConfigureAwait(false);
-            }
-
-            count += await SaveChangesAsync(ensureAutoHistory);
-
-            ts.Complete();
-
-            return count;
-        }
-    }
-
-    public void Dispose()
-    {
-        Dispose(true);
-
-        GC.SuppressFinalize(this);
-    }
-
-    protected virtual void Dispose(bool disposing)
-    {
-        if (!disposed)
-        {
-            if (disposing)
-            {
-                if (repositories != null)
-                {
-                    repositories.Clear();
-                }
-
-                _context.Dispose();
+                return sharedResult + tenantResult;
             }
         }
 
-        disposed = true;
-    }
-
-    public void TrackGraph(object rootEntity, Action<EntityEntryGraphNode> callback)
-    {
-        _context.ChangeTracker.TrackGraph(rootEntity, callback);
-    }
-
-    public async Task BeginTransactionAsync()
-    {
-        _transaction = await _context.Database.BeginTransactionAsync();
-    }
-
-    public async Task CommitAsync()
-    {
-        try
+        public void Dispose()
         {
-            await _transaction.CommitAsync();
+            _sharedContext.Dispose();
+            _tenantContext.Dispose();
+            GC.SuppressFinalize(this);
         }
-        finally
+
+        public IReadOnlyList<DomainEvent> GetDomainEvents()
         {
-            await _transaction.DisposeAsync();
-            _transaction = null;
+            var events = _sharedContext.DomainEvents.ToList();
+            return events;
+        }
+
+        public void ClearDomainEvents()
+        {
+            _sharedContext.ClearDomainEvents();
         }
     }
 
-    public async Task RollbackAsync()
+    public class UserRepository : Repository<ApplicationUser>, IUserRepository
     {
-        try
-        {
-            await _transaction.RollbackAsync();
-        }
-        finally
-        {
-            await _transaction.DisposeAsync();
-            _transaction = null;
-        }
+        public UserRepository(SharedDbContext context) : base(context) { }
     }
-    public IEnumerable<DomainEvent> GetDomainEvents()
+    public class RoleRepository : Repository<ApplicationRole>, IRoleRepository
     {
-        return _context.ChangeTracker.Entries<IDomainEvent>()
-            .Select(e => e.Entity)
-            .SelectMany(e => e.DomainEvents)
-            .ToList();
+        public RoleRepository(SharedDbContext context) : base(context) { }
     }
-
-    public void ClearDomainEvents()
+    public class TenantRepository : Repository<ApplicationTenant>, ITenantRepository
     {
-        List<IDomainEvent> domainEventEntities = _context.ChangeTracker.Entries<IDomainEvent>()
-            .Select(e => e.Entity)
-            .Where(e => e.DomainEvents.Any())
-            .ToList();
-
-        domainEventEntities.ForEach(e => e.ClearDomainEvents());
+        public TenantRepository(SharedDbContext context) : base(context) { }
+    }
+    public class SubscriptionRepository : Repository<Subscription>, ISubscriptionRepository
+    {
+        public SubscriptionRepository(SharedDbContext context) : base(context) { }
+    }
+    public class SettingRepository : Repository<Setting>, ISettingRepository
+    {
+        public SettingRepository(SharedDbContext context) : base(context) { }
+    }
+    public class PlanRepository : Repository<Plan>, IPlanRepository
+    {
+        public PlanRepository(SharedDbContext context) : base(context) { }
+    }
+    public class PlanFeatureRepository : Repository<PlanFeature>, IPlanFeatureRepository
+    {
+        public PlanFeatureRepository(SharedDbContext context) : base(context) { }
+    }
+    public class FeatureDefinitionRepository : Repository<FeatureDefinition>, IFeatureDefinitionRepository
+    {
+        public FeatureDefinitionRepository(SharedDbContext context) : base(context) { }
+    }
+    public class BillingProfileRepository : Repository<BillingProfile>, IBillingProfileRepository
+    {
+        public BillingProfileRepository(SharedDbContext context) : base(context) { }
+    }
+    public class CityRepository : Repository<City>, ICityRepository
+    {
+        public CityRepository(SharedDbContext context) : base(context) { }
+    }
+    public class DistrictRepository : Repository<District>, IDistrictRepository
+    {
+        public DistrictRepository(SharedDbContext context) : base(context) { }
     }
 }
