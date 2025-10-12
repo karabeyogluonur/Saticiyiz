@@ -1,26 +1,28 @@
 using Microsoft.EntityFrameworkCore;
-using ST.Application.Interfaces.Repositories;
 using ST.Application.Interfaces.Seeds;
 using ST.Application.Settings;
 using ST.Domain.Entities.Configurations;
 using ST.Domain.Interfaces;
+using ST.Infrastructure.Persistence.Contexts;
 using System.Reflection;
 
 namespace ST.Infrastructure.Seeds
 {
     public class SettingSeeder : ISettingSeeder, ISeeder
     {
-        private readonly IUnitOfWork _unitOfWork;
+        // IUnitOfWork yerine doğrudan SharedDbContext'e bağımlı oluyoruz.
+        private readonly SharedDbContext _context;
 
-        public SettingSeeder(IUnitOfWork unitOfWork)
+        public SettingSeeder(SharedDbContext context)
         {
-            _unitOfWork = unitOfWork;
+            _context = context;
         }
 
         public async Task SeedAsync()
         {
-
-            var existingSettings = await _unitOfWork.Settings.GetAll()
+            // Seeder, tenant filtresinden etkilenmemelidir.
+            // Sadece global (TenantId'si null olan) ayarları kontrol ediyoruz.
+            var existingSettings = await _context.Settings
                 .IgnoreQueryFilters()
                 .Where(s => s.TenantId == null)
                 .ToListAsync();
@@ -30,35 +32,33 @@ namespace ST.Infrastructure.Seeds
             var settingsToSeed = DiscoverAndMapSettings();
             var defaultKeys = settingsToSeed.Select(s => s.Key).ToHashSet();
 
+            // Veritabanında eksik olan yeni global ayarları bul ve ekle
             var missingSettings = settingsToSeed
                 .Where(s => !existingKeys.Contains(s.Key))
                 .ToList();
 
             if (missingSettings.Any())
             {
-                foreach (var setting in missingSettings)
-                {
-                    await _unitOfWork.Settings.AddAsync(setting);
-                }
+                await _context.Settings.AddRangeAsync(missingSettings);
             }
 
+            // Kodda artık var olmayan, eskimiş global ayarları bul ve sil
             var obsoleteSettings = existingSettings
                 .Where(s => !defaultKeys.Contains(s.Key))
                 .ToList();
 
             if (obsoleteSettings.Any())
             {
-                foreach (var setting in obsoleteSettings)
-                {
-                    _unitOfWork.Settings.Remove(setting);
-                }
+                _context.Settings.RemoveRange(obsoleteSettings);
             }
 
-            await _unitOfWork.SaveChangesAsync();
+            // Değişiklikleri kaydet.
+            await _context.SaveChangesAsync();
         }
 
         private List<Setting> DiscoverAndMapSettings()
         {
+            // Bu metodun içeriğinde bir değişiklik yapmaya gerek yok.
             var applicationAssembly = typeof(SubscriptionSetting).Assembly;
 
             var settingTypes = applicationAssembly.GetTypes()
@@ -74,11 +74,7 @@ namespace ST.Infrastructure.Seeds
             {
                 object defaultSettingInstance = Activator.CreateInstance(settingType);
 
-                string prefix = string.Empty;
-                if (defaultSettingInstance is IGroupSetting groupSetting)
-                {
-                    prefix = groupSetting.GetPrefix() + ".";
-                }
+                string prefix = (defaultSettingInstance is IGroupSetting groupSetting) ? groupSetting.GetPrefix() + "." : string.Empty;
 
                 PropertyInfo[] properties = settingType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
@@ -104,7 +100,7 @@ namespace ST.Infrastructure.Seeds
                         Key = key,
                         Value = value,
                         Type = type,
-                        TenantId = null,
+                        TenantId = null, // Global ayar olduğunu belirtiyoruz.
                         CreatedBy = "System.Seeder",
                         CreatedDate = DateTime.UtcNow
                     });

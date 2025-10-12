@@ -26,6 +26,10 @@ using ST.Infrastructure.Services.Common;
 using ST.Infrastructure.Tenancy;
 using ST.Application.Interfaces.Repositories;
 using ST.Infrastructure.Persistence.Repositories;
+using ST.Infrastructure.Services.Tenancy;
+using ST.Application.Interfaces.Contexts;
+using ST.Application.Interfaces.Identity;
+using ST.Infrastructure.Services.Identity;
 
 namespace ST.Infrastructure.Extensions
 {
@@ -33,13 +37,47 @@ namespace ST.Infrastructure.Extensions
     {
         public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
         {
+
             #region Database Configuration
-            services.AddDbContext<SharedDbContext>(options =>
-            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")).EnableSensitiveDataLogging());
+
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
+            // --- DbContext KAYITLARI (Nihai Hali) ---
+
+            // 1. SharedDbContext: Her zaman varsayılan bağlantıyı kullanır.
+            var defaultConnectionString = configuration.GetConnectionString("DefaultConnection");
+
+            if (string.IsNullOrEmpty(defaultConnectionString))
+            {
+                throw new InvalidOperationException("DefaultConnection is not configured.");
+            }
+            services.AddDbContext<SharedDbContext>(options =>
+                options.UseNpgsql(defaultConnectionString));
+
+            // 2. TenantDbContext:
+            // Bu kayıt, 'dotnet ef migrations add' komutunun çalışması için gereklidir.
+            // Komut çalışırken, bir veritabanı sağlayıcısı belirtilmiş olmalıdır.
+            // Bu yüzden ona da geçici olarak default connection string'i veriyoruz.
+            // Runtime'da bu bağlantı, aşağıdaki AddScoped<ITenantDbContext> kaydı sayesinde ezilecektir.
             services.AddDbContext<TenantDbContext>(options =>
-            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")).EnableSensitiveDataLogging());
+                options.UseNpgsql(defaultConnectionString));
+
+            // 3. ISharedDbContext ve ITenantDbContext arayüzlerini somut sınıflara bağlıyoruz.
+            // Bu, UnitOfWork'ün doğru context'leri almasını sağlar.
+            services.AddScoped<ISharedDbContext>(provider => provider.GetRequiredService<SharedDbContext>());
+
+            // Bu, dinamik bağlantının anahtarıdır. Her istekte ITenantResolver'ı kullanarak
+            // doğru connection string ile yeni bir TenantDbContext örneği oluşturur.
+            services.AddScoped<ITenantDbContext>(serviceProvider =>
+            {
+                var resolver = serviceProvider.GetRequiredService<ITenantResolver>();
+                var connectionString = resolver.GetTenantConnectionStringAsync().GetAwaiter().GetResult();
+
+                var optionsBuilder = new DbContextOptionsBuilder<TenantDbContext>();
+                optionsBuilder.UseNpgsql(connectionString);
+
+                return new TenantDbContext(optionsBuilder.Options);
+            });
 
             #endregion
 
@@ -52,8 +90,8 @@ namespace ST.Infrastructure.Extensions
                 options.Password.RequireNonAlphanumeric = false;
                 options.Password.RequiredLength = 8;
 
-                options.SignIn.RequireConfirmedAccount = true;
-                options.SignIn.RequireConfirmedEmail = true;
+                options.SignIn.RequireConfirmedAccount = false;
+                options.SignIn.RequireConfirmedEmail = false;
                 options.SignIn.RequireConfirmedPhoneNumber = false;
 
                 options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
@@ -88,14 +126,23 @@ namespace ST.Infrastructure.Extensions
             services.AddScoped<IUrlHelperService, UrlHelperService>();
             services.AddScoped<IUserContext, UserContext>();
             services.AddScoped<ICurrentTenantStore, CurrentTenantStore>();
-            #endregion
+            services.AddScoped<ITenantResolver, TenantResolver>();
+            services.AddScoped<ITenantMigrationService, TenantMigrationService>();
+            services.AddScoped<IUserService, UserService>();
+            services.AddScoped<ISubscriptionService, SubscriptionService>();
+            services.AddScoped<IPlanService, PlanService>();
+            services.AddScoped<ITenantService, TenantService>();
+            services.AddScoped<IRoleService, RoleService>();
 
+
+            #endregion
 
             #region Authorization Configuration
             services.AddAuthorization();
             #endregion
 
             #region MediatR Pipeline Behaviors
+            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(TransactionBehavior<,>));
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(PlanCheckPipelineBehavior<,>));
             #endregion
 

@@ -10,12 +10,10 @@ namespace ST.Domain.Entities
 
         public string Identifier { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
-        public string? ConnectionString { get; set; }
+        public string? ConnectionString { get; set; } // Boş olabilir, eğer boşsa ortak veritabanını kullanır
+        public bool HasDedicatedDatabase => !string.IsNullOrEmpty(ConnectionString);
         public bool IsActive { get; set; } = true;
-        public bool IsSetupComplete { get; set; } = false;
-
         public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
-
         public string CreatedBy { get; set; } = default!;
         public DateTime CreatedDate { get; set; }
         public string? LastModifiedBy { get; set; }

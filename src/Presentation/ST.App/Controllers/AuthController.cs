@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -66,15 +67,19 @@ public class AuthController : BaseController
                 await _mediator.Send(new SendEmailVerificationCommand(registerViewModel.Email));
 
                 _logger.LogInformation("Yeni kullanıcı kaydı başarılı: {Email}", registerViewModel.Email);
-                await _notificationService.SuccessAsync(
-                    "Kaydınız başarıyla oluşturuldu. E-posta adresinize gelen mailden doğrulamayı yaptıktan sonra giriş yapabilirsiniz.");
-                return RedirectToAction(nameof(Login));
+
+                await _notificationService.SuccessAsync("Kaydınız başarıyla oluşturuldu.");
+
+                await _mediator.Send(new LoginUserCommand { Email = registerViewModel.Email, Password = registerViewModel.Password });
+
+                return RedirectToAction("Index", "Home");
             }
             else
             {
-                _logger.LogWarning("Kullanıcı kaydı başarısız oldu: {Email}. Hatalar: {Errors}",
-                    registerViewModel.Email, string.Join(", ", response.Errors));
+                _logger.LogWarning("Kullanıcı kaydı başarısız oldu: {Email}. Hatalar: {Errors}", registerViewModel.Email, string.Join(", ", response.Errors));
+
                 await _notificationService.ErrorAsync(response.Message);
+
                 if (response.Errors is not null)
                 {
                     foreach (string error in response.Errors)
@@ -109,7 +114,7 @@ public class AuthController : BaseController
 
         if (ModelState.IsValid)
         {
-            Response<LoginResultDto> result = await _mediator.Send(_mapper.Map<LoginUserCommand>(loginViewModel));
+            Response<LoginUserResultDto> result = await _mediator.Send(_mapper.Map<LoginUserCommand>(loginViewModel));
 
             if (result.Data != null)
             {
@@ -118,10 +123,6 @@ public class AuthController : BaseController
                     case LoginStatus.Success:
                         _logger.LogInformation("Kullanıcı girişi başarılı: {Email}", loginViewModel.Email);
                         await _notificationService.SuccessAsync("Kullanıcı girişi başarılı!");
-                        if (result.Data.RequiresSetup)
-                        {
-                            return RedirectToAction("Index", "Setup");
-                        }
                         return RedirectToLocal(returnUrl);
 
                     case LoginStatus.LockedOut:
@@ -284,6 +285,25 @@ public class AuthController : BaseController
         return View(nameof(Login));
     }
 
+    [HttpGet]
+    public async Task<IActionResult> ResendEmailVerification(string returnUrl)
+    {
+        if (!User.Identity.IsAuthenticated)
+            return RedirectToAction("Login", "Auth");
+
+        String email = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+
+        if (String.IsNullOrEmpty(email))
+            await _notificationService.ErrorAsync("Email doğrulama onay bağlantısı gönderilirken bir sorun oluştu. Daha sonra tekrar deneyiniz.");
+
+        else
+        {
+            await _mediator.Send(new SendEmailVerificationCommand(email));
+            await _notificationService.SuccessAsync($"Email doğrulama onay bağlantısı {email} adresine gönderilmiştir.");
+        }
+
+        return RedirectToLocal(returnUrl);
+    }
 
     #endregion
 

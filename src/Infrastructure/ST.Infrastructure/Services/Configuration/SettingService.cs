@@ -57,7 +57,7 @@ namespace ST.Infrastructure.Services.Configuration
             var tenantId = _currentTenantStore.Id.Value;
             var settingRepository = _unitOfWork.Settings;
 
-            var setting = await settingRepository.GetAsync(s => s.Key == key && s.TenantId == tenantId);
+            var setting = await settingRepository.GetFirstOrDefaultAsync(predicate: s => s.Key == key && s.TenantId == tenantId);
 
             string valueToSave = value?.ToString() ?? string.Empty;
 
@@ -77,7 +77,7 @@ namespace ST.Infrastructure.Services.Configuration
                     CreatedBy = "System.SettingService",
                     CreatedDate = DateTime.UtcNow
                 };
-                await settingRepository.AddAsync(newSetting);
+                await settingRepository.InsertAsync(newSetting);
             }
 
             await _unitOfWork.SaveChangesAsync();

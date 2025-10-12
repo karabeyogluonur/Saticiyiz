@@ -25,6 +25,7 @@ namespace ST.Application.Common.Behaviors
         public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
         {
             var transactionalAttribute = request.GetType().GetCustomAttribute<TransactionalAttribute>();
+
             if (transactionalAttribute is null)
             {
                 return await next();

@@ -8,7 +8,7 @@ using System.Security.Claims;
 
 namespace ST.Application.Features.Identity.Commands.LoginUser
 {
-    public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Response<LoginResultDto>>
+    public class LoginUserCommandHandler : IRequestHandler<LoginUserCommand, Response<LoginUserResultDto>>
     {
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly UserManager<ApplicationUser> _userManager;
@@ -24,46 +24,46 @@ namespace ST.Application.Features.Identity.Commands.LoginUser
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<Response<LoginResultDto>> Handle(LoginUserCommand request, CancellationToken cancellationToken)
+        public async Task<Response<LoginUserResultDto>> Handle(LoginUserCommand request, CancellationToken cancellationToken)
         {
             var user = await _userManager.FindByEmailAsync(request.Email);
 
             if (user == null || !user.IsActive)
-                return Response<LoginResultDto>.ErrorWithData(new LoginResultDto { Status = LoginStatus.InvalidCredentials, ErrorMessage = "Geçersiz e-posta veya şifre." });
+                return Response<LoginUserResultDto>.ErrorWithData(new LoginUserResultDto { Status = LoginStatus.InvalidCredentials, ErrorMessage = "Geçersiz e-posta veya şifre." });
 
             var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: true);
 
             if (result.IsLockedOut)
-                return Response<LoginResultDto>.ErrorWithData(new LoginResultDto { Status = LoginStatus.LockedOut, ErrorMessage = "Hesabınız çok fazla başarısız deneme nedeniyle kilitlenmiştir. Lütfen daha sonra tekrar deneyin." });
+                return Response<LoginUserResultDto>.ErrorWithData(new LoginUserResultDto { Status = LoginStatus.LockedOut, ErrorMessage = "Hesabınız çok fazla başarısız deneme nedeniyle kilitlenmiştir. Lütfen daha sonra tekrar deneyin." });
 
             if (result.IsNotAllowed)
-                return Response<LoginResultDto>.ErrorWithData(new LoginResultDto { Status = LoginStatus.NotAllowed, ErrorMessage = "Hesabınıza giriş izni yok. Lütfen e-postanızı onayladığınızdan emin olun." });
+                return Response<LoginUserResultDto>.ErrorWithData(new LoginUserResultDto { Status = LoginStatus.NotAllowed, ErrorMessage = "Hesabınıza giriş izni yok. Lütfen yöneticiler ile iletişime geçiniz!" });
 
             if (result.RequiresTwoFactor)
-                return Response<LoginResultDto>.ErrorWithData(new LoginResultDto { Status = LoginStatus.RequiresTwoFactor });
+                return Response<LoginUserResultDto>.ErrorWithData(new LoginUserResultDto { Status = LoginStatus.RequiresTwoFactor });
 
             if (!result.Succeeded)
-                return Response<LoginResultDto>.ErrorWithData(new LoginResultDto { Status = LoginStatus.InvalidCredentials, ErrorMessage = "Geçersiz e-posta veya şifre." });
+                return Response<LoginUserResultDto>.ErrorWithData(new LoginUserResultDto { Status = LoginStatus.InvalidCredentials, ErrorMessage = "Geçersiz e-posta veya şifre." });
 
-            var tenant = await _unitOfWork.Tenants.GetByIdAsync(user.TenantId);
+            var tenant = await _unitOfWork.Tenants.FindAsync(user.TenantId);
 
             if (tenant == null)
-                return Response<LoginResultDto>.ErrorWithData(new LoginResultDto { Status = LoginStatus.NotAllowed, ErrorMessage = "Hesabınızla ilişkili bir şirket bilgisi bulunamadı. Lütfen destek ile iletişime geçin." });
+                return Response<LoginUserResultDto>.ErrorWithData(new LoginUserResultDto { Status = LoginStatus.NotAllowed, ErrorMessage = "Hesabınızla ilişkili bir şirket bilgisi bulunamadı. Lütfen destek ile iletişime geçin." });
 
             var claims = new List<Claim>
             {
-                new Claim(CustomClaims.TenantId, user.TenantId.ToString())
+                new Claim(CustomClaims.TenantId, user.TenantId.ToString()),
+                new Claim(CustomClaims.EmailVerification, user.EmailConfirmed.ToString())
             };
 
             await _signInManager.SignInWithClaimsAsync(user, request.RememberMe, claims);
 
-            var resultDto = new LoginResultDto
+            var resultDto = new LoginUserResultDto
             {
                 Status = LoginStatus.Success,
-                RequiresSetup = !tenant.IsSetupComplete
             };
 
-            return Response<LoginResultDto>.Success(resultDto);
+            return Response<LoginUserResultDto>.Success(resultDto);
         }
     }
 }

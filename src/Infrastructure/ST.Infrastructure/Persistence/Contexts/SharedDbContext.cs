@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using ST.Application.Interfaces.Contexts;
 using ST.Application.Interfaces.Tenancy;
 using ST.Domain.Entities;
 using ST.Domain.Entities.Billing;
@@ -14,7 +15,7 @@ using System.Linq.Expressions;
 
 namespace ST.Infrastructure.Persistence.Contexts
 {
-    public class SharedDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, int>
+    public class SharedDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, int>, ISharedDbContext
     {
         private readonly List<DomainEvent> _domainEvents = new();
         public IReadOnlyList<DomainEvent> DomainEvents => _domainEvents.AsReadOnly();
@@ -24,10 +25,13 @@ namespace ST.Infrastructure.Persistence.Contexts
         public DbSet<ApplicationTenant> ApplicationTenants { get; set; }
         public DbSet<Subscription> Subscriptions { get; set; }
         public DbSet<Plan> Plans { get; set; }
+        public DbSet<FeatureDefinition> FeatureDefinitions { get; set; }
+        public DbSet<PlanFeature> PlanFeatures { get; set; }
         public DbSet<Setting> Settings { get; set; }
         public DbSet<BillingProfile> BillingProfiles { get; set; }
         public DbSet<City> Cities { get; set; }
         public DbSet<District> Districts { get; set; }
+
 
         public SharedDbContext(DbContextOptions<SharedDbContext> options) : base(options) { }
 

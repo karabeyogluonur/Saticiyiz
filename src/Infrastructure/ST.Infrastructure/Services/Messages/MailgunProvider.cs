@@ -50,7 +50,7 @@ public class MailgunProvider : IEmailProvider
         if (!response.IsSuccessStatusCode)
         {
             string errorContent = await response.Content.ReadAsStringAsync();
-            throw new Exception($"Mailgun e-posta gönderilemedi. Status: {response.StatusCode}, Response: {errorContent}");
+
         }
     }
 }
