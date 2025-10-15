@@ -23,12 +23,12 @@ public class SubscriptionService : ISubscriptionService
         _settingService = settingService;
     }
 
-    public async Task<Subscription> AssignTrialSubscriptionAsync(ApplicationTenant tenant, Plan plan, int trialDays)
+    public async Task<Subscription> AssignTrialSubscriptionAsync(int tenantId, int planId, int trialDays)
     {
         var subscription = new Subscription
         {
-            Tenant = tenant,
-            Plan = plan,
+            TenantId = tenantId,
+            PlanId = planId,
             Status = SubscriptionStatus.Trial,
             CurrentPeriodEndDate = DateTime.UtcNow.AddDays(trialDays),
             CreatedBy = "System",

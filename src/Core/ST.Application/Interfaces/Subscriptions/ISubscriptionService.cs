@@ -6,7 +6,7 @@ namespace ST.Application.Interfaces.Subscriptions;
 
 public interface ISubscriptionService
 {
-    Task<Subscription> AssignTrialSubscriptionAsync(ApplicationTenant tenant, Plan plan, int trialDays);
+    Task<Subscription> AssignTrialSubscriptionAsync(int tenantId, int planId, int trialDays);
     Task<Subscription> GetActiveOrTrialSubscriptionAsync(int tenantId);
     Task<Subscription> GetActiveOrTrialSubscriptionAsync();
 }

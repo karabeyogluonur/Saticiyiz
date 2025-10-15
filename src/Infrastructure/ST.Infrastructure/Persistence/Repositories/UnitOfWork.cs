@@ -55,15 +55,14 @@ namespace ST.Infrastructure.Persistence.Repositories
 
         public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            var sharedResult = await _sharedContext.SaveChangesAsync(cancellationToken);
+            var tenantResult = 0;
+            if (_tenantContext.ChangeTracker.HasChanges())
             {
-                var sharedResult = await _sharedContext.SaveChangesAsync(cancellationToken);
-                var tenantResult = await _tenantContext.SaveChangesAsync(cancellationToken);
-
-                scope.Complete();
-
-                return sharedResult + tenantResult;
+                tenantResult = await _tenantContext.SaveChangesAsync(cancellationToken);
             }
+
+            return sharedResult + tenantResult;
         }
 
         public void Dispose()

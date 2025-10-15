@@ -124,9 +124,7 @@ namespace ST.Infrastructure.Services.Configuration
             var settingRepository = _unitOfWork.Settings;
             var tenantId = _currentTenantStore.Id;
 
-            return await settingRepository.GetAll()
-                .OrderByDescending(s => s.TenantId)
-                .FirstOrDefaultAsync(s => s.Key == key);
+            return await _unitOfWork.Settings.GetFirstOrDefaultAsync(predicate: s => s.Key == key);
         }
 
         private T ConvertValue<T>(string value, Type targetType)

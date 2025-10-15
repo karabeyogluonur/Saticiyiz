@@ -7,7 +7,7 @@ namespace ST.Application.Interfaces.Identity
 {
     public interface IRoleService
     {
-        Task SeedDefaultRolesForTenantAsync(ApplicationTenant tenant);
+        Task SeedDefaultRolesForTenantAsync(int tenantId);
         Task AssignRoleToUserAsync(ApplicationUser user, string roleName);
     }
 }

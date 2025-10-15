@@ -7,6 +7,7 @@ namespace ST.Application.Interfaces.Common
     {
         string BuildAbsoluteUrl(string relativePath, Dictionary<string, string>? queryParams = null);
         string BuildUnsubscribeUrl(string token);
+        public string CreatePasswordResetUrl(string email, string identityToken);
     }
 
 

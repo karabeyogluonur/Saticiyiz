@@ -69,9 +69,7 @@ public class AuthController : BaseController
                 _logger.LogInformation("Yeni kullanıcı kaydı başarılı: {Email}", registerViewModel.Email);
 
                 await _notificationService.SuccessAsync("Kaydınız başarıyla oluşturuldu.");
-
                 await _mediator.Send(new LoginUserCommand { Email = registerViewModel.Email, Password = registerViewModel.Password });
-
                 return RedirectToAction("Index", "Home");
             }
             else
@@ -114,7 +112,7 @@ public class AuthController : BaseController
 
         if (ModelState.IsValid)
         {
-            Response<LoginUserResultDto> result = await _mediator.Send(_mapper.Map<LoginUserCommand>(loginViewModel));
+            Response<LoginUserResponseDto> result = await _mediator.Send(_mapper.Map<LoginUserCommand>(loginViewModel));
 
             if (result.Data != null)
             {

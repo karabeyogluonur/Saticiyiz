@@ -160,6 +160,9 @@ namespace ST.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsSetupCompleted")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("LastModifiedBy")
                         .HasColumnType("text");
 
@@ -348,8 +351,8 @@ namespace ST.Infrastructure.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
+                        .HasMaxLength(999)
+                        .HasColumnType("character varying(999)");
 
                     b.Property<string>("Name")
                         .HasMaxLength(256)
@@ -364,10 +367,8 @@ namespace ST.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("NormalizedName")
-                        .HasDatabaseName("RoleNameIndex");
-
-                    b.HasIndex("TenantId");
+                    b.HasIndex("TenantId", "NormalizedName")
+                        .IsUnique();
 
                     b.ToTable("AspNetRoles", (string)null);
                 });
@@ -556,7 +557,7 @@ namespace ST.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("FeatureDefinition");
+                    b.ToTable("FeatureDefinitions");
                 });
 
             modelBuilder.Entity("ST.Domain.Entities.Subscriptions.Plan", b =>
@@ -637,7 +638,7 @@ namespace ST.Infrastructure.Migrations
 
                     b.HasIndex("PlanId");
 
-                    b.ToTable("PlanFeature");
+                    b.ToTable("PlanFeatures");
                 });
 
             modelBuilder.Entity("ST.Domain.Entities.Subscriptions.Subscription", b =>

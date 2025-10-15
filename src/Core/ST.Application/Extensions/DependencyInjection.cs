@@ -15,9 +15,9 @@ namespace ST.Application.Extensions
             services.AddMediatR(cfg =>
             {
                 cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
+                cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(TransactionBehavior<,>));
+                cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(EventDispatchingBehavior<,>));
             });
-
-            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(TransactionBehavior<,>));
             return services;
         }
     }

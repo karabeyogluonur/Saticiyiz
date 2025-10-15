@@ -22,6 +22,7 @@ namespace ST.Infrastructure.Migrations
                     Name = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
                     ConnectionString = table.Column<string>(type: "text", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    IsSetupCompleted = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: false),
                     CreatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     LastModifiedBy = table.Column<string>(type: "text", nullable: true),
@@ -49,7 +50,7 @@ namespace ST.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "FeatureDefinition",
+                name: "FeatureDefinitions",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
@@ -67,7 +68,7 @@ namespace ST.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_FeatureDefinition", x => x.Id);
+                    table.PrimaryKey("PK_FeatureDefinitions", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -123,7 +124,7 @@ namespace ST.Infrastructure.Migrations
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Description = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
+                    Description = table.Column<string>(type: "character varying(999)", maxLength: 999, nullable: false),
                     TenantId = table.Column<int>(type: "integer", nullable: false),
                     Name = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     NormalizedName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
@@ -201,7 +202,7 @@ namespace ST.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "PlanFeature",
+                name: "PlanFeatures",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
@@ -212,15 +213,15 @@ namespace ST.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_PlanFeature", x => x.Id);
+                    table.PrimaryKey("PK_PlanFeatures", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_PlanFeature_FeatureDefinition_FeatureDefinitionId",
+                        name: "FK_PlanFeatures_FeatureDefinitions_FeatureDefinitionId",
                         column: x => x.FeatureDefinitionId,
-                        principalTable: "FeatureDefinition",
+                        principalTable: "FeatureDefinitions",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_PlanFeature_Plans_PlanId",
+                        name: "FK_PlanFeatures_Plans_PlanId",
                         column: x => x.PlanId,
                         principalTable: "Plans",
                         principalColumn: "Id",
@@ -431,14 +432,10 @@ namespace ST.Infrastructure.Migrations
                 column: "RoleId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_AspNetRoles_TenantId",
+                name: "IX_AspNetRoles_TenantId_NormalizedName",
                 table: "AspNetRoles",
-                column: "TenantId");
-
-            migrationBuilder.CreateIndex(
-                name: "RoleNameIndex",
-                table: "AspNetRoles",
-                column: "NormalizedName");
+                columns: new[] { "TenantId", "NormalizedName" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetUserClaims_UserId",
@@ -499,13 +496,13 @@ namespace ST.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_PlanFeature_FeatureDefinitionId",
-                table: "PlanFeature",
+                name: "IX_PlanFeatures_FeatureDefinitionId",
+                table: "PlanFeatures",
                 column: "FeatureDefinitionId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PlanFeature_PlanId",
-                table: "PlanFeature",
+                name: "IX_PlanFeatures_PlanId",
+                table: "PlanFeatures",
                 column: "PlanId");
 
             migrationBuilder.CreateIndex(
@@ -547,7 +544,7 @@ namespace ST.Infrastructure.Migrations
                 name: "BillingProfiles");
 
             migrationBuilder.DropTable(
-                name: "PlanFeature");
+                name: "PlanFeatures");
 
             migrationBuilder.DropTable(
                 name: "Settings");
@@ -565,7 +562,7 @@ namespace ST.Infrastructure.Migrations
                 name: "Districts");
 
             migrationBuilder.DropTable(
-                name: "FeatureDefinition");
+                name: "FeatureDefinitions");
 
             migrationBuilder.DropTable(
                 name: "Plans");

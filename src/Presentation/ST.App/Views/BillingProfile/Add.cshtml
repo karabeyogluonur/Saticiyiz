@@ -1,0 +1,325 @@
+@model BillingProfileAddViewModel
+@{
+    ViewData["Title"] = "Yeni Fatura Profili";
+}
+
+@* Sayfa Başlığı ve Breadcrumb *@
+<div class="card mb-5">
+    <div class="card-body">
+        <div class="d-flex flex-wrap flex-stack">
+            <div class="d-flex flex-column justify-content-center flex-wrap me-3">
+                <h1 class="page-heading d-flex text-dark fw-bold fs-3 flex-column justify-content-center my-0">Yeni
+                    Fatura Profili Oluştur</h1>
+                <ul class="breadcrumb breadcrumb-separatorless fw-semibold fs-7 my-0 pt-1">
+                    <li class="breadcrumb-item text-muted">
+                        <a asp-area="Admin" asp-controller="Home" asp-action="Index"
+                            class="text-muted text-hover-primary">Anasayfa</a>
+                    </li>
+                    <li class="breadcrumb-item"><span class="bullet bg-gray-400 w-5px h-2px"></span></li>
+                    <li class="breadcrumb-item text-muted">
+                        <a asp-area="Admin" asp-controller="Billing" asp-action="Index"
+                            class="text-muted text-hover-primary">Fatura Profilleri</a>
+                    </li>
+                    <li class="breadcrumb-item"><span class="bullet bg-gray-400 w-5px h-2px"></span></li>
+                    <li class="breadcrumb-item text-dark">Yeni Ekle</li>
+                </ul>
+            </div>
+            <div class="d-flex align-items-center py-1">
+                <a asp-area="Admin" asp-controller="Billing" asp-action="Index" class="btn btn-sm btn-light-primary">
+                    <i class="ki-duotone ki-arrow-left fs-3"><span class="path1"></span><span class="path2"></span></i>
+                    Listeye Geri Dön
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* Form Alanı *@
+<div class="card">
+    <div class="card-body">
+        <form id="billing_profile_add_form" asp-action="Create" asp-controller="Billing" method="post" class="form">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger d-none"></div>
+
+            <h3 class="fs-5 fw-bold mb-5">Fatura Tipi</h3>
+            <div class="row">
+                <div class="col-md-12 fv-row mb-7">
+                    <label asp-for="BillingAccountType" class="required form-label fs-7 fw-semibold"></label>
+                    <select asp-for="BillingAccountType" asp-items="Model.BillingAccountTypeList"
+                        class="form-select form-select-sm" data-control="select2" data-hide-search="true"
+                        data-placeholder="Fatura tipi seçiniz...">
+                    </select>
+                    <span asp-validation-for="BillingAccountType"
+                        class="fv-plugins-message-container invalid-feedback fs-8"></span>
+                </div>
+            </div>
+
+            <div class="separator separator-dashed my-6"></div>
+
+            <h3 class="fs-5 fw-bold mb-5">İletişim ve Adres Bilgileri</h3>
+            <div class="row">
+                <div class="col-md-6 fv-row mb-4">
+                    <label asp-for="Email" class="required form-label fs-7 fw-semibold"></label>
+                    <input asp-for="Email" type="email" class="form-control form-control-sm" />
+                    <span asp-validation-for="Email" class="fv-plugins-message-container invalid-feedback fs-8"></span>
+                </div>
+                <div class="col-md-6 fv-row mb-4">
+                    <label asp-for="PhoneNumber" class="form-label fs-7 fw-semibold"></label>
+                    <input asp-for="PhoneNumber" class="form-control form-control-sm" />
+                    <span asp-validation-for="PhoneNumber"
+                        class="fv-plugins-message-container invalid-feedback fs-8"></span>
+                </div>
+            </div>
+
+            <div class="fv-row mb-4">
+                <label asp-for="Address" class="required form-label fs-7 fw-semibold"></label>
+                <textarea asp-for="Address" class="form-control form-control-sm" rows="3"></textarea>
+                <span asp-validation-for="Address" class="fv-plugins-message-container invalid-feedback fs-8"></span>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4 fv-row mb-4">
+                    <label asp-for="CityId" class="required form-label fs-7 fw-semibold"></label>
+                    <select asp-for="CityId" asp-items="Model.CityList" class="form-select form-select-sm"
+                        data-control="select2" data-placeholder="Şehir seçiniz...">
+                        <option></option>
+                    </select>
+                    <span asp-validation-for="CityId" class="fv-plugins-message-container invalid-feedback fs-8"></span>
+                </div>
+                <div class="col-md-4 fv-row mb-4">
+                    <label asp-for="DistrictId" class="required form-label fs-7 fw-semibold"></label>
+                    <select asp-for="DistrictId" asp-items="Model.DistrictList" class="form-select form-select-sm"
+                        data-control="select2" data-placeholder="İlçe seçiniz...">
+                        <option></option>
+                    </select>
+                    <span asp-validation-for="DistrictId"
+                        class="fv-plugins-message-container invalid-feedback fs-8"></span>
+                </div>
+                <div class="col-md-4 fv-row mb-4">
+                    <label asp-for="PostalCode" class="required form-label fs-7 fw-semibold"></label>
+                    <input asp-for="PostalCode" class="form-control form-control-sm" />
+                    <span asp-validation-for="PostalCode"
+                        class="fv-plugins-message-container invalid-feedback fs-8"></span>
+                </div>
+            </div>
+
+            <div class="separator separator-dashed my-6"></div>
+
+            @* Bireysel Müşteri Alanları *@
+            <div id="individualFields" style="display:none;">
+                <h3 class="fs-5 fw-bold mb-5">Bireysel Bilgiler</h3>
+                <div class="row">
+                    <div class="col-md-6 fv-row mb-4">
+                        <label asp-for="IndividualFirstName" class="required form-label fs-7 fw-semibold"></label>
+                        <input asp-for="IndividualFirstName" class="form-control form-control-sm" />
+                        <span asp-validation-for="IndividualFirstName"
+                            class="fv-plugins-message-container invalid-feedback fs-8"></span>
+                    </div>
+                    <div class="col-md-6 fv-row mb-4">
+                        <label asp-for="IndividualLastName" class="required form-label fs-7 fw-semibold"></label>
+                        <input asp-for="IndividualLastName" class="form-control form-control-sm" />
+                        <span asp-validation-for="IndividualLastName"
+                            class="fv-plugins-message-container invalid-feedback fs-8"></span>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12 fv-row mb-4">
+                        <label asp-for="IndividualIdentityNumber" class="required form-label fs-7 fw-semibold"></label>
+                        <input asp-for="IndividualIdentityNumber" class="form-control form-control-sm" />
+                        <span asp-validation-for="IndividualIdentityNumber"
+                            class="fv-plugins-message-container invalid-feedback fs-8"></span>
+                    </div>
+                </div>
+            </div>
+
+            @* Kurumsal Müşteri Alanları *@
+            <div id="corporateFields" style="display:none;">
+                <h3 class="fs-5 fw-bold mb-5">Kurumsal Bilgiler</h3>
+                <div class="row">
+                    <div class="col-md-12 fv-row mb-4">
+                        <label asp-for="CorporateCompanyName" class="required form-label fs-7 fw-semibold"></label>
+                        <input asp-for="CorporateCompanyName" class="form-control form-control-sm" />
+                        <span asp-validation-for="CorporateCompanyName"
+                            class="fv-plugins-message-container invalid-feedback fs-8"></span>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 fv-row mb-4">
+                        <label asp-for="CorporateTaxOffice" class="required form-label fs-7 fw-semibold"></label>
+                        <input asp-for="CorporateTaxOffice" class="form-control form-control-sm" />
+                        <span asp-validation-for="CorporateTaxOffice"
+                            class="fv-plugins-message-container invalid-feedback fs-8"></span>
+                    </div>
+                    <div class="col-md-6 fv-row mb-4">
+                        <label asp-for="CorporateTaxNumber" class="required form-label fs-7 fw-semibold"></label>
+                        <input asp-for="CorporateTaxNumber" class="form-control form-control-sm" />
+                        <span asp-validation-for="CorporateTaxNumber"
+                            class="fv-plugins-message-container invalid-feedback fs-8"></span>
+                    </div>
+                </div>
+            </div>
+
+            @* Form Butonları *@
+            <div class="d-flex justify-content-end pt-5">
+                <a asp-action="Index" class="btn btn-sm btn-light me-3">İptal</a>
+                <button type="submit" id="billing_profile_submit_btn" class="btn btn-sm btn-primary">
+                    <span class="indicator-label">Kaydet</span>
+                    <span class="indicator-progress">Lütfen bekleyin...
+                        <span class="spinner-border spinner-border-sm align-middle ms-2"></span>
+                    </span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script type="text/javascript">
+        "use strict";
+
+        // Form Yönetimi için modül deseni
+        var BillingProfileAddFormManager = function () {
+            // Private değişkenler
+            let form;
+            let submitButton;
+            let validator;
+            let billingAccountTypeSelect;
+            let individualFields;
+            let corporateFields;
+
+            // Fatura tipi seçimine göre alanları ve validasyonları yönetir
+            const handleAccountTypeChange = function () {
+                // DOM'dan select elementini JQuery ile alıyoruz, çünkü Select2 eklentisiyle daha uyumlu çalışıyor.
+                const selectElement = $(billingAccountTypeSelect);
+
+                selectElement.on('change', function (e) {
+                    updateFormFieldsAndValidation();
+                });
+
+                // Sayfa ilk yüklendiğinde de mevcut değeri kontrol et
+                updateFormFieldsAndValidation();
+            };
+
+            // Alanları göster/gizle ve validasyonları ekle/kaldır
+            const updateFormFieldsAndValidation = function () {
+                const selectedType = $(billingAccountTypeSelect).val();
+
+                // Bireysel seçiliyse
+                if (selectedType == '@((int)ST.Domain.Enums.BillingAccountType.Individual)') {
+                    individualFields.style.display = 'block';
+                    corporateFields.style.display = 'none';
+
+                    // Bireysel alan validasyonlarını ekle
+                    validator.addField('IndividualFirstName', { validators: { notEmpty: { message: 'Ad alanı zorunludur.' } } });
+                    validator.addField('IndividualLastName', { validators: { notEmpty: { message: 'Soyad alanı zorunludur.' } } });
+                    validator.addField('IndividualIdentityNumber', { validators: { notEmpty: { message: 'TC Kimlik Numarası zorunludur.' }, stringLength: { min: 11, max: 11, message: 'TC Kimlik Numarası 11 haneli olmalıdır.' }, digits: { message: 'Lütfen sadece rakam giriniz.' } } });
+
+                    // Kurumsal alan validasyonlarını kaldır
+                    validator.removeField('CorporateCompanyName');
+                    validator.removeField('CorporateTaxOffice');
+                    validator.removeField('CorporateTaxNumber');
+                }
+                // Kurumsal seçiliyse
+                else if (selectedType == '@((int)ST.Domain.Enums.BillingAccountType.Corporate)') {
+                    individualFields.style.display = 'none';
+                    corporateFields.style.display = 'block';
+
+                    // Kurumsal alan validasyonlarını ekle
+                    validator.addField('CorporateCompanyName', { validators: { notEmpty: { message: 'Şirket Adı zorunludur.' } } });
+                    validator.addField('CorporateTaxOffice', { validators: { notEmpty: { message: 'Vergi Dairesi zorunludur.' } } });
+                    validator.addField('CorporateTaxNumber', { validators: { notEmpty: { message: 'Vergi Numarası zorunludur.' }, stringLength: { min: 10, max: 11, message: 'Vergi Numarası 10 veya 11 haneli olmalıdır.' }, digits: { message: 'Lütfen sadece rakam giriniz.' } } });
+
+                    // Bireysel alan validasyonlarını kaldır
+                    validator.removeField('IndividualFirstName');
+                    validator.removeField('IndividualLastName');
+                    validator.removeField('IndividualIdentityNumber');
+                }
+                // Hiçbiri seçili değilse
+                else {
+                    individualFields.style.display = 'none';
+                    corporateFields.style.display = 'none';
+
+                    // Tüm dinamik alan validasyonlarını kaldır
+                    validator.removeField('IndividualFirstName');
+                    validator.removeField('IndividualLastName');
+                    validator.removeField('IndividualIdentityNumber');
+                    validator.removeField('CorporateCompanyName');
+                    validator.removeField('CorporateTaxOffice');
+                    validator.removeField('CorporateTaxNumber');
+                }
+            }
+
+            // Temel form validasyonunu başlatır
+            const initValidation = function () {
+                validator = FormValidation.formValidation(
+                    form,
+                    {
+                        // Sabit (her zaman zorunlu) alanların validasyonu
+                        fields: {
+                            'BillingAccountType': { validators: { notEmpty: { message: 'Fatura tipi seçimi zorunludur.' } } },
+                            'Email': { validators: { notEmpty: { message: 'E-posta adresi zorunludur.' }, emailAddress: { message: 'Geçerli bir e-posta adresi giriniz.' } } },
+                            'Address': { validators: { notEmpty: { message: 'Adres zorunludur.' } } },
+                            'CityId': { validators: { notEmpty: { message: 'Şehir seçimi zorunludur.' } } },
+                            'DistrictId': { validators: { notEmpty: { message: 'İlçe seçimi zorunludur.' } } },
+                            'PostalCode': { validators: { notEmpty: { message: 'Posta Kodu zorunludur.' }, digits: { message: 'Lütfen sadece rakam giriniz.' } } },
+                            // Not: Telefon Numarası zorunlu olmadığı için burada tanımlanmadı. İstenirse eklenebilir.
+                        },
+                        plugins: {
+                            trigger: new FormValidation.plugins.Trigger(),
+                            bootstrap: new FormValidation.plugins.Bootstrap5({ rowSelector: '.fv-row', eleInvalidClass: '', eleValidClass: '' }),
+                            submitButton: new FormValidation.plugins.SubmitButton(),
+                        }
+                    }
+                );
+            };
+
+            // Form gönderimini yönetir
+            const handleSubmit = function () {
+                submitButton.addEventListener('click', function (e) {
+                    e.preventDefault();
+
+                    // Hem sabit hem de dinamik olarak eklenen alanları doğrula
+                    validator.validate().then(function (status) {
+                        if (status == 'Valid') {
+                            submitButton.setAttribute('data-kt-indicator', 'on');
+                            submitButton.disabled = true;
+                            form.submit(); // Formu gönder
+                        } else {
+                            Swal.fire({
+                                text: "Formda eksik veya hatalı alanlar var, lütfen kontrol edin.",
+                                icon: "error",
+                                buttonsStyling: false,
+                                confirmButtonText: "Tamam",
+                                customClass: { confirmButton: "btn btn-primary" }
+                            });
+                        }
+                    });
+                });
+            };
+
+            // Public metodlar
+            return {
+                init: function () {
+                    // Gerekli DOM elementlerini seç
+                    form = document.querySelector('#billing_profile_add_form');
+                    submitButton = document.querySelector('#billing_profile_submit_btn');
+                    billingAccountTypeSelect = document.querySelector('[name="BillingAccountType"]');
+                    individualFields = document.querySelector('#individualFields');
+                    corporateFields = document.querySelector('#corporateFields');
+
+                    if (!form) {
+                        return;
+                    }
+
+                    initValidation();
+                    handleAccountTypeChange(); // Dinamik alanları yöneten listener'ı başlat
+                    handleSubmit();
+                }
+            };
+        }();
+
+        // Sayfa yüklendiğinde modülü başlat
+        KTUtil.onDOMContentLoaded(function () {
+            BillingProfileAddFormManager.init();
+        });
+    </script>
+}

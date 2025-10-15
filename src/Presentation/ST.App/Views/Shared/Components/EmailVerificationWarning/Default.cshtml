@@ -14,7 +14,7 @@
                 <!--begin::Action-->
                 <div class="mb-3">
                     <a asp-controller="Auth" asp-action="ResendEmailVerification"
-                        asp-route-returnUrl="@Context.Request.Path + Context.Request.QueryString"
+                        asp-route-returnUrl="@($"{Context.Request.Path}{Context.Request.QueryString}")"
                         class="btn btn-danger fw-semibold me-2">Tekrar Gönder</a>
                 </div>
                 <!--begin::Action-->

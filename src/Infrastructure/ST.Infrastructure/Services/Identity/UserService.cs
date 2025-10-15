@@ -1,15 +1,9 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.DependencyInjection;
-using ST.Application.DTOs.Messages;
-using ST.Application.Interfaces.Configuration;
 using ST.Application.Interfaces.Identity;
-using ST.Application.Interfaces.Messages;
 using ST.Application.Interfaces.Repositories;
-using ST.Application.Settings;
 using ST.Domain.Entities;
 using ST.Domain.Entities.Identity;
-using ST.Domain.Enums;
-using ST.Infrastructure.Services.Email;
 
 
 namespace ST.Infrastructure.Services.Identity;
@@ -32,13 +26,73 @@ public class UserService : IUserService
         return (identityResult, identityResult.Succeeded ? user : null);
     }
 
+    public async Task<ApplicationUser> GetUserByIdAsync(int userId)
+    {
+        return await _unitOfWork.Users.FindAsync(userId);
+    }
+
     public async Task<bool> IsEmailUniqueGloballyAsync(string email)
     {
-        return await _unitOfWork.Users.ExistsAsync(user => user.NormalizedEmail == email.ToUpperInvariant(), ignoreQueryFilters: true);
+        bool emailExist = await _unitOfWork.Users.ExistsAsync(user => user.NormalizedEmail == email.ToUpperInvariant(), ignoreQueryFilters: true);
+        return !emailExist;
     }
 
     public async Task<bool> IsPhoneUniqueGloballyAsync(string phoneNumber)
     {
-        return await _unitOfWork.Users.ExistsAsync(user => user.PhoneNumber == phoneNumber, ignoreQueryFilters: true);
+        bool phoneExist = await _unitOfWork.Users.ExistsAsync(user => user.PhoneNumber == phoneNumber, ignoreQueryFilters: true);
+        return !phoneExist;
+    }
+    public async Task<IList<Claim>> GetClaimsAsync(ApplicationUser user)
+    {
+        return await _userManager.GetClaimsAsync(user);
+    }
+    public async Task AddClaimAsync(ApplicationUser user, string claimType, string claimValue)
+    {
+        var claim = new Claim(claimType, claimValue);
+        await _userManager.AddClaimAsync(user, claim);
+    }
+
+    public async Task AddClaimAsync(ApplicationUser user, Claim claim)
+    {
+        await _userManager.AddClaimAsync(user, claim);
+    }
+    public async Task UpdateClaimAsync(ApplicationUser user, string claimType, string newValue)
+    {
+        var claims = await _userManager.GetClaimsAsync(user);
+        var existingClaim = claims.FirstOrDefault(claim => claim.Type == claimType);
+
+        if (existingClaim != null)
+            await _userManager.RemoveClaimAsync(user, existingClaim);
+
+        await _userManager.AddClaimAsync(user, new Claim(claimType, newValue));
+
+    }
+    public async Task RemoveClaimAsync(ApplicationUser user, Claim claim)
+    {
+        await _userManager.RemoveClaimAsync(user, claim);
+    }
+
+    public async Task<ApplicationUser> GetUserByEmailAsync(string userEmail)
+    {
+        return await _unitOfWork.Users.GetFirstOrDefaultAsync(predicate: user => user.Email == userEmail);
+    }
+    public async Task<string> GeneratePasswordResetTokenAsync(ApplicationUser user)
+    {
+        return await _userManager.GeneratePasswordResetTokenAsync(user);
+    }
+
+    public async Task<IdentityResult> ConfirmEmailAsync(ApplicationUser user, string identityToken)
+    {
+        return await _userManager.ConfirmEmailAsync(user, identityToken);
+    }
+    public async Task<IdentityResult> ResetPasswordAsync(ApplicationUser user, string identityToken, string newPassword)
+    {
+        return await _userManager.ResetPasswordAsync(user, identityToken, newPassword);
+    }
+    public async Task<IdentityResult> UnsubscribeFromNewsletterAsync(ApplicationUser user)
+    {
+        user.IsSubscribedToNewsletter = false;
+        user.NewsletterSubscribedAt = null;
+        return await _userManager.UpdateAsync(user);
     }
 }

@@ -1,6 +1,6 @@
 namespace ST.Application.Features.Identity.Commands.LoginUser
 {
-    public class LoginUserResultDto
+    public class LoginUserResponseDto
     {
         public LoginStatus Status { get; set; }
         public string? ErrorMessage { get; set; }

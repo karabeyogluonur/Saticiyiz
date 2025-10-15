@@ -16,4 +16,9 @@ public static class ClaimsPrincipalExtensions
         string? username = claimsPrincipal?.FindFirstValue(ClaimTypes.Name);
         return username;
     }
+    public static int GetTenantId(this ClaimsPrincipal? claimsPrincipal)
+    {
+        string? tenantId = claimsPrincipal?.FindFirstValue(CustomClaims.TenantId);
+        return Convert.ToInt32(tenantId);
+    }
 }

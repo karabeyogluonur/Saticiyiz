@@ -13,6 +13,7 @@ namespace ST.Domain.Entities
         public string? ConnectionString { get; set; } // Boş olabilir, eğer boşsa ortak veritabanını kullanır
         public bool HasDedicatedDatabase => !string.IsNullOrEmpty(ConnectionString);
         public bool IsActive { get; set; } = true;
+        public bool IsSetupCompleted { get; set; } = false;
         public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
         public string CreatedBy { get; set; } = default!;
         public DateTime CreatedDate { get; set; }

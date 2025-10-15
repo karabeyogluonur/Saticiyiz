@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using ST.Application.Interfaces.Contexts;
@@ -21,7 +22,6 @@ namespace ST.Infrastructure.Persistence.Contexts
         public IReadOnlyList<DomainEvent> DomainEvents => _domainEvents.AsReadOnly();
 
         private readonly ICurrentTenantStore _currentTenantStore;
-        private readonly IMediator _mediator;
         public DbSet<ApplicationTenant> ApplicationTenants { get; set; }
         public DbSet<Subscription> Subscriptions { get; set; }
         public DbSet<Plan> Plans { get; set; }
@@ -37,19 +37,15 @@ namespace ST.Infrastructure.Persistence.Contexts
 
         public SharedDbContext(
             DbContextOptions<SharedDbContext> options,
-            ICurrentTenantStore currentTenantStore,
-            IMediator mediator) : base(options)
+            ICurrentTenantStore currentTenantStore) : base(options)
         {
             _currentTenantStore = currentTenantStore;
-            _mediator = mediator;
         }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
 
-            var roleEntity = builder.Entity<ApplicationRole>();
-            roleEntity.HasIndex(r => r.NormalizedName).IsUnique(false);
 
             if (_currentTenantStore != null && _currentTenantStore.Id.HasValue)
             {
@@ -73,7 +69,7 @@ namespace ST.Infrastructure.Persistence.Contexts
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = new CancellationToken())
         {
-            _dispatchDomainEvents();
+            CollectDomainEvents();
 
             if (_currentTenantStore?.Id.HasValue == true)
             {
@@ -90,13 +86,14 @@ namespace ST.Infrastructure.Persistence.Contexts
             return result;
         }
 
-        private void _dispatchDomainEvents()
+        private void CollectDomainEvents()
         {
             var domainEventEntities = ChangeTracker.Entries<IDomainEvent>()
                 .Select(e => e.Entity)
                 .Where(e => e.DomainEvents.Any())
                 .ToList();
 
+            // Event'leri IMediator'a göndermek yerine, sadece bu context'e ait listeye ekliyoruz.
             foreach (var entity in domainEventEntities)
             {
                 _domainEvents.AddRange(entity.DomainEvents);

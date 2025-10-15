@@ -8,5 +8,6 @@ namespace ST.Application.Interfaces.Tenancy
     {
         Task<ApplicationTenant> CreateTenantAsync(string tenantName);
         Task<ApplicationTenant> GetTenantByIdAsync(int tenantId);
+        Task MarkSetupAsCompletedAsync(ApplicationTenant tenant);
     }
 }

@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.DataProtection;
+using ST.Application.Constants;
+using ST.Application.DTOs.Identity;
 using ST.Application.Interfaces.Security;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace ST.Infrastructure.Services.Security
 {
@@ -58,5 +61,42 @@ namespace ST.Infrastructure.Services.Security
         }
 
         #endregion
+
+        public (ResetPasswordPayloadDto? Payload, string? ErrorMessage) UnprotectPasswordResetToken(string protectedToken)
+        {
+            try
+            {
+                var payload = Unprotect<ResetPasswordPayloadDto>(protectedToken, DataProtectionPurposes.PasswordReset);
+                return (payload, null);
+            }
+            catch
+            {
+                return (null, "Geçersiz veya süresi dolmuş token.");
+            }
+        }
+        public (EmailVerificationPayloadDto? Payload, string? ErrorMessage) UnprotectEmailVerificationToken(string protectedToken)
+        {
+            try
+            {
+                var payload = Unprotect<EmailVerificationPayloadDto>(protectedToken, DataProtectionPurposes.EmailVerification);
+                return (payload, null);
+            }
+            catch
+            {
+                return (null, "Geçersiz veya süresi dolmuş token.");
+            }
+        }
+        public (string? Email, string? ErrorMessage) UnprotectUnsubscribeToken(string protectedToken)
+        {
+            try
+            {
+                string email = Unprotect(protectedToken, DataProtectionPurposes.UnsubscribeNewsletter);
+                return (email, null);
+            }
+            catch
+            {
+                return (null, "Geçersiz veya süresi dolmuş token.");
+            }
+        }
     }
 }

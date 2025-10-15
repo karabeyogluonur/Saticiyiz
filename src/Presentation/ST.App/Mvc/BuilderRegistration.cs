@@ -23,6 +23,7 @@ public static class BuilderRegistration
         builder.UseMiddleware<LogContextMiddleware>();
         builder.UseMiddleware<TenantResolverMiddleware>();
         builder.UseMiddleware<GlobalExceptionHandlerMiddleware>();
+        builder.UseMiddleware<SetupMiddleware>();
     }
     public static async Task AddDatabaseInitializerAsync(this WebApplication builder)
     {

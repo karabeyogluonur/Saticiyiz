@@ -1,61 +1,46 @@
+using System.Text.Json;
 using Hangfire;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
-using System.Text;
-using System.Text.Json;
-using ST.Application.Constants;
-using ST.Application.DTOs.Identity;
 using ST.Application.DTOs.Messages.EmailTemplates;
+using ST.Application.Features.Identity.Commands.ForgotPassword;
 using ST.Application.Interfaces.Common;
+using ST.Application.Interfaces.Identity;
 using ST.Application.Interfaces.Messages;
-using ST.Application.Interfaces.Security;
 using ST.Application.Wrappers;
 using ST.Domain.Entities.Identity;
+using ST.Domain.Identity;
 
-namespace ST.Application.Features.Identity.Commands.ForgotPassword;
-
-public class ForgotPasswordHandler : IRequestHandler<ForgotPasswordCommand, Response<string>>
+public class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswordCommand, Response<string>>
 {
-    private readonly UserManager<ApplicationUser> _userManager;
-    private readonly IProtectedDataService _protectedDataService;
+    private readonly IUserService _userService;
     private readonly IUrlHelperService _urlHelperService;
-    private readonly IBackgroundJobClient _backgroundJobClient;
+    IBackgroundJobClient _backgroundJobClient;
 
-    public ForgotPasswordHandler(
-        UserManager<ApplicationUser> userManager,
-        IProtectedDataService protectedDataService,
+    public ForgotPasswordCommandHandler(
+        IUserService userService,
         IUrlHelperService urlHelperService,
         IBackgroundJobClient backgroundJobClient)
     {
-        _userManager = userManager;
-        _protectedDataService = protectedDataService;
+        _userService = userService;
         _urlHelperService = urlHelperService;
         _backgroundJobClient = backgroundJobClient;
     }
 
     public async Task<Response<string>> Handle(ForgotPasswordCommand request, CancellationToken cancellationToken)
     {
-        ApplicationUser user = await _userManager.FindByEmailAsync(request.Email);
+        ApplicationUser user = await _userService.GetUserByEmailAsync(request.Email);
 
         if (user == null)
-            return Response<string>.Error("Bu e-posta ile kayıtlı kullanıcı bulunamadı.");
+            return Response<string>.Error("Bu e-posta adresine kayıtlı kullanıcı bulunamadı!");
 
-        string identityToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+        string identityToken = await _userService.GeneratePasswordResetTokenAsync(user);
 
-        ResetPasswordPayloadDto payload = new ResetPasswordPayloadDto { Email = user.Email, IdentityToken = identityToken };
+        string resetUrl = _urlHelperService.CreatePasswordResetUrl(user.Email, identityToken);
 
-        string protectedData = _protectedDataService.Protect(payload, DataProtectionPurposes.PasswordReset);
+        string forgotPasswordEmailJson = JsonSerializer.Serialize(new ForgotPasswordEmailTemplateDto(resetUrl));
 
-        string resetUrl = _urlHelperService.BuildAbsoluteUrl("/Auth/ResetPassword",
-            new Dictionary<string, string> { { "token", protectedData } }
-        );
-
-        string forgotPasswordEmailTemplateDtoJson = JsonSerializer.Serialize(
-            new ForgotPasswordEmailTemplateDto(resetUrl));
-
-        _backgroundJobClient.Enqueue<IEmailSender>(sender => 
-            sender.SendTemplateMailAsync(user.Email, "Şifremi Unuttum - Satıcıyız", 
-                "saticiyiz-app-forgot-password", forgotPasswordEmailTemplateDtoJson));
+        _backgroundJobClient.Enqueue<IEmailSender>(sender => sender.SendTemplateMailAsync(user.Email, "Şifremi Unuttum - Satıcıyız", "saticiyiz-app-forgot-password", forgotPasswordEmailJson));
 
         return Response<string>.Success("Şifre sıfırlama linki e-posta adresinize gönderildi.");
     }

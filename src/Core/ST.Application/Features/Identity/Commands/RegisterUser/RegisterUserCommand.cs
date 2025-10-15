@@ -1,8 +1,10 @@
 using MediatR;
+using ST.Application.Common.Attributes;
 using ST.Application.Wrappers;
 
 namespace ST.Application.Features.Identity.Commands.RegisterUser
 {
+    [Transactional]
     public class RegisterUserCommand : IRequest<Response<int>>
     {
         public string FirstName { get; set; }

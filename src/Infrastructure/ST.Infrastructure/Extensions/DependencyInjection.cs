@@ -30,6 +30,8 @@ using ST.Infrastructure.Services.Tenancy;
 using ST.Application.Interfaces.Contexts;
 using ST.Application.Interfaces.Identity;
 using ST.Infrastructure.Services.Identity;
+using ST.Infrastructure.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace ST.Infrastructure.Extensions
 {
@@ -102,7 +104,17 @@ namespace ST.Infrastructure.Extensions
 
             })
             .AddEntityFrameworkStores<SharedDbContext>()
-            .AddDefaultTokenProviders();
+            .AddUserStore<TenantAwareUserStore>()
+            .AddRoleStore<TenantAwareRoleStore>()
+            .AddDefaultTokenProviders()
+            .AddRoleValidator<TenantRoleValidator<ApplicationRole>>();
+
+            services.AddScoped<UserManager<ApplicationUser>, TenantAwareUserManager>();
+            services.AddScoped<IUserStore<ApplicationUser>, TenantAwareUserStore>();
+            services.AddScoped<IRoleStore<ApplicationRole>, TenantAwareRoleStore>();
+
+
+
 
             services.ConfigureApplicationCookie(options =>
             {
@@ -142,7 +154,6 @@ namespace ST.Infrastructure.Extensions
             #endregion
 
             #region MediatR Pipeline Behaviors
-            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(TransactionBehavior<,>));
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(PlanCheckPipelineBehavior<,>));
             #endregion
 

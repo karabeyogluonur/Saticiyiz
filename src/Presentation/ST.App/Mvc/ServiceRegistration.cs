@@ -16,7 +16,17 @@ namespace ST.App.Mvc
         }
         public static void AddSerilogServices(this IServiceCollection services)
         {
-            Log.Logger = new LoggerConfiguration().CreateBootstrapLogger();
+            // Bu yapılandırma, appsettings.json dosyasındaki "Serilog" bölümünü
+            // okuyarak tüm ayarları (veritabanı bağlantısı dahil) oradan almasını sağlar.
+            Log.Logger = new LoggerConfiguration()
+                .ReadFrom.Configuration(new ConfigurationBuilder()
+                    .AddJsonFile("appsettings.json")
+                    .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", optional: true)
+                    .Build())
+                .Enrich.FromLogContext()
+                .CreateLogger();
+
+            services.AddSerilog();
         }
         public static void AddAutoMapper(this IServiceCollection services)
         {

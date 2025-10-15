@@ -1,15 +1,16 @@
 using System;
+using ST.Domain.Entities.Identity;
 using ST.Domain.Events.Common;
 
 namespace ST.Domain.Identity
 {
     public class UserCreatedEvent : DomainEvent
     {
-        public int UserId { get; }
+        public ApplicationUser User { get; }
 
-        public UserCreatedEvent(int userId)
+        public UserCreatedEvent(ApplicationUser user)
         {
-            UserId = userId;
+            User = user;
         }
     }
 }

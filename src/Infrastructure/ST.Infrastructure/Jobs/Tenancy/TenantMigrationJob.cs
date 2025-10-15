@@ -11,7 +11,6 @@ namespace ST.Infrastructure.Jobs
             _migrationService = migrationService;
         }
 
-        // Hangfire bu metodu çağıracak
         public async Task RunAsync(int tenantId)
         {
             await _migrationService.MigrateTenantToDedicatedDatabaseAsync(tenantId, CancellationToken.None);

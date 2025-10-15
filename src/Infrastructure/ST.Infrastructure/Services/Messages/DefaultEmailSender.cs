@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
-using ST.Application.DTOs.Messages;
 using ST.Application.Interfaces.Configuration;
 using ST.Application.Interfaces.Messages;
 using ST.Application.Settings;

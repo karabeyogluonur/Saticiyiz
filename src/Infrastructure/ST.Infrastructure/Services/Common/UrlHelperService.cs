@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Http;
+using ST.Application.Constants;
+using ST.Application.DTOs.Identity;
 using ST.Application.Interfaces.Common;
+using ST.Application.Interfaces.Security;
 using System;
 
 namespace ST.Infrastructure.Services.Common
@@ -8,10 +11,12 @@ namespace ST.Infrastructure.Services.Common
     public class UrlHelperService : IUrlHelperService
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IProtectedDataService _protectedDataService;
 
-        public UrlHelperService(IHttpContextAccessor httpContextAccessor)
+        public UrlHelperService(IHttpContextAccessor httpContextAccessor, IProtectedDataService protectedDataService)
         {
             _httpContextAccessor = httpContextAccessor;
+            _protectedDataService = protectedDataService;
         }
 
         public string BuildAbsoluteUrl(string relativePath, Dictionary<string, string>? queryParams = null)
@@ -52,6 +57,16 @@ namespace ST.Infrastructure.Services.Common
             string unsubscribeUrl = $"{baseUrl}/auth/unsubscribe?token={Uri.EscapeDataString(token)}";
 
             return unsubscribeUrl;
+        }
+
+        public string CreatePasswordResetUrl(string email, string identityToken)
+        {
+            var payload = new ResetPasswordPayloadDto { Email = email, IdentityToken = identityToken };
+            string protectedData = _protectedDataService.Protect(payload, DataProtectionPurposes.PasswordReset);
+
+            return BuildAbsoluteUrl("/Auth/ResetPassword",
+                new Dictionary<string, string> { { "token", protectedData } }
+            );
         }
     }
 }
