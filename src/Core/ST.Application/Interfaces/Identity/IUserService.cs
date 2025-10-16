@@ -12,7 +12,7 @@ namespace ST.Application.Interfaces.Identity
         Task<bool> IsPhoneUniqueGloballyAsync(string phoneNumber);
         Task<(IdentityResult, ApplicationUser)> CreateUserAsync(ApplicationUser user, ApplicationTenant tenant, string password);
         Task<ApplicationUser> GetUserByIdAsync(int userId);
-        Task<ApplicationUser> GetUserByEmailAsync(string userEmail);
+        Task<ApplicationUser> GetUserByEmailAsync(string userEmail, bool ignoreQueryFilters = false);
         Task<IList<Claim>> GetClaimsAsync(ApplicationUser user);
         Task RemoveClaimAsync(ApplicationUser user, Claim claim);
         Task UpdateClaimAsync(ApplicationUser user, string claimType, string newValue);

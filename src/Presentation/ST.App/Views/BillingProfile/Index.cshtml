@@ -1,0 +1,174 @@
+@model BillingProfileListViewModel
+@{
+    ViewData["Title"] = "Fatura Adresleri";
+}
+
+<div class="card mb-5">
+    <div class="card-body">
+        <div class="d-flex flex-wrap flex-stack">
+            <div class="d-flex flex-column justify-content-center flex-wrap me-3">
+                <h1 class="page-heading d-flex text-dark fw-bold fs-3 flex-column justify-content-center my-0">
+                    @ViewData["Title"]
+                </h1>
+                <ul class="breadcrumb breadcrumb-separatorless fw-semibold fs-7 my-0 pt-1">
+                    <li class="breadcrumb-item text-muted">
+                        <a asp-controller="Home" asp-action="Index" class="text-muted text-hover-primary">Anasayfa</a>
+                    </li>
+                    <li class="breadcrumb-item"><span class="bullet bg-gray-400 w-5px h-2px"></span></li>
+                    <li class="breadcrumb-item text-muted">Hesap Ayarları</li>
+                    <li class="breadcrumb-item"><span class="bullet bg-gray-400 w-5px h-2px"></span></li>
+                    <li class="breadcrumb-item text-dark">@ViewData["Title"]</li>
+                </ul>
+            </div>
+            <div class="d-flex align-items-center py-1">
+                @* Yeni Ekle butonu, standartlara uygun olarak Create action'ına yönlendirildi *@
+                <a asp-controller="BillingProfile" asp-action="Add" class="btn btn-sm btn-primary">
+                    <i class="ki-duotone ki-plus fs-2"></i> Yeni Ekle
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="row gx-9 gy-6">
+            @if (Model.BillingProfiles.Any())
+            {
+                @foreach (var profile in Model.BillingProfiles)
+                {
+                    <div class="col-xl-6">
+                        <div class="card card-dashed h-xl-100 flex-row flex-stack flex-wrap p-6">
+                            <div class="d-flex flex-column py-2">
+                                <div class="d-flex align-items-center fs-5 fw-bold mb-5">
+                                    @profile.DisplayName
+                                    <span class="badge @profile.BadgeClass fs-7 ms-2">@profile.AccountTypeDisplayName</span>
+                                </div>
+                                <div class="fs-6 fw-semibold text-gray-600">
+                                    @Html.Raw(profile.FullAddress)
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center py-2">
+                                @* Sil butonu için hazırlık: SweetAlert ile kullanılacak data attribute'ları *@
+                                <button class="btn btn-sm btn-light-danger btn-active-light-primary me-3 btn-delete"
+                                    data-id="@profile.Id" data-name="@profile.DisplayName">
+                                    Sil
+                                </button>
+
+                                @* Edit butonu için hazırlık: Düzenleme sayfasına yönlendirme *@
+                                <a asp-action="Edit" asp-route-id="@profile.Id"
+                                    class="btn btn-sm btn-light btn-active-light-primary">Düzenle</a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="col-xl-12">
+                    <div
+                        class="notice d-flex bg-light-warning rounded border-warning border border-dashed flex-stack h-xl-100 p-6">
+                        <div class="d-flex flex-stack flex-grow-1 flex-wrap flex-md-nowrap">
+                            <div class="mb-3 mb-md-0 fw-semibold">
+                                <h4 class="text-gray-900 fw-bold">Kayıtlı Fatura Adresi Bulunamadı!</h4>
+                                <div class="fs-6 text-gray-700 pe-7">Aboneliklerinizi ve faturalarınızı yönetmek için lütfen
+                                    yeni bir fatura adresi ekleyin.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+<form id="antiForgeryForm">
+    @Html.AntiForgeryToken()
+</form>
+@section Scripts {
+    <script>
+        // DOM hazır olduğunda butonlara event ekle
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // Tüm silme butonlarını seç
+            const deleteButtons = document.querySelectorAll('.btn-delete');
+
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const id = this.getAttribute('data-id');
+                    const name = this.getAttribute('data-name');
+                    const card = this.closest('.col-xl-6'); // Silinecek alanın kapsayıcısı
+
+                    Swal.fire({
+                        title: 'Emin misiniz?',
+                        html: `<b>${name}</b> adlı fatura adresi silinecek.`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Evet, Sil',
+                        cancelButtonText: 'Vazgeç',
+                        buttonsStyling: false,
+                        customClass: {
+                            confirmButton: 'btn btn-danger',
+                            cancelButton: 'btn btn-light'
+                        }
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+
+                            // Anti-forgery token’ı al
+                            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+                            fetch('@Url.Action("Delete", "BillingProfile")', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/x-www-form-urlencoded',
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                },
+                                body: `__RequestVerificationToken=${token}&id=${id}`
+                            })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        Swal.fire({
+                                            title: 'Silindi!',
+                                            text: data.message,
+                                            icon: 'success',
+                                            buttonsStyling: false,
+                                            confirmButtonText: 'Tamam',
+                                            customClass: { confirmButton: 'btn btn-primary' }
+                                        });
+
+                                        // Kartın yavaşça kaybolması
+                                        card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                                        card.style.opacity = '0';
+                                        card.style.transform = 'translateY(-10px)';
+
+                                        setTimeout(() => {
+                                            card.remove();
+                                        }, 600);
+                                    } else {
+                                        Swal.fire({
+                                            title: 'Hata!',
+                                            text: data.message,
+                                            icon: 'error',
+                                            buttonsStyling: false,
+                                            confirmButtonText: 'Tamam',
+                                            customClass: { confirmButton: 'btn btn-primary' }
+                                        });
+                                    }
+                                })
+                                .catch(() => {
+                                    Swal.fire({
+                                        title: 'Hata!',
+                                        text: 'İstek sırasında bir hata oluştu.',
+                                        icon: 'error',
+                                        buttonsStyling: false,
+                                        confirmButtonText: 'Tamam',
+                                        customClass: { confirmButton: 'btn btn-primary' }
+                                    });
+                                });
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+}

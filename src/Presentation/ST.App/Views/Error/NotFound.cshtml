@@ -1,3 +1,4 @@
+@model ST.App.Features.Errors.ViewModels.ErrorViewModel
 @{
     ViewData["Title"] = "Sayfa Bulunamadı";
     Layout = "_Root";
@@ -7,6 +8,9 @@
 <style>
     body {
         background-image: url('/themes/metronic/assets/media/auth/bg1.jpg');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
     }
 
     [data-bs-theme="dark"] body {
@@ -14,44 +18,49 @@
     }
 </style>
 <!--end::Page bg image-->
-<!--begin::Authentication - Signup Welcome Message -->
+
+<!--begin::NotFound Message-->
 <div class="d-flex flex-column flex-center flex-column-fluid">
-    <!--begin::Content-->
     <div class="d-flex flex-column flex-center text-center p-10">
-        <!--begin::Wrapper-->
-        <div class="card card-flush w-lg-650px py-5">
+        <div class="card card-flush w-lg-650px py-5 shadow-sm">
             <div class="card-body py-15 py-lg-20">
-                <!--begin::Title-->
+                <!-- Title -->
                 <h1 class="fw-bolder fs-2hx text-gray-900 mb-4">Oppss!</h1>
-                <!--end::Title-->
-                <!--begin::Text-->
-                <div class="fw-semibold fs-6 text-gray-500 mb-7">Aradığınız sayfayı bulamadık... (Müfettiş Gadget ile bu
-                    konu üzerinde
-                    çalışıyoruz.)</div>
-                <!--end::Text-->
-                <!--begin::Illustration-->
+
+                <!-- Message -->
+                <div class="fw-semibold fs-6 text-gray-600 mb-7">
+                    Aradığınız sayfayı bulamadık. Endişelenmeyin, Müfettiş Gadget bu konuda çalışıyor.
+                </div>
+
+                <!-- Illustration -->
                 <div class="mb-3">
                     <img src="~/themes/metronic/assets/media/auth/404-error.png"
-                        class="mw-100 mh-300px theme-light-show" alt="" />
+                        class="mw-100 mh-300px theme-light-show" alt="404 Not Found" />
                     <img src="~/themes/metronic/assets/media/auth/404-error-dark.png"
-                        class="mw-100 mh-300px theme-dark-show" alt="" />
+                        class="mw-100 mh-300px theme-dark-show" alt="404 Not Found Dark" />
                 </div>
-                <!--end::Illustration-->
-                <!--begin::Link-->
-                <div class="mb-0">
+
+                <!-- Action Buttons -->
+                <div class="mb-0 d-flex flex-column flex-sm-row justify-content-center gap-3">
                     <a href="javascript:history.back()" class="btn btn-sm btn-primary">
                         <i class="ki-outline ki-arrow-left fs-2"></i>
                         Geri Dön
                     </a>
+                    <a href="@Url.Action("Index", "Home")" class="btn btn-sm btn-secondary">
+                        <i class="ki-outline ki-home fs-2"></i>
+                        Anasayfaya Git
+                    </a>
                 </div>
-                <!--end::Link-->
+
+                <!-- Auto redirect info -->
+                <div class="mt-3 text-muted fs-7">
+                    Sayfa otomatik olarak <strong>10 saniye</strong> içinde anasayfaya yönlendirilecektir.
+                </div>
             </div>
         </div>
-        <!--end::Wrapper-->
     </div>
-    <!--end::Content-->
 </div>
-<!--end::Authentication - Signup Welcome Message-->
+<!--end::NotFound Message-->
 
 <script>
     // Auto redirect after 10 seconds

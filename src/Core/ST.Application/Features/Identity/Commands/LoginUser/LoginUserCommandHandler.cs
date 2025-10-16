@@ -15,20 +15,23 @@ namespace ST.Application.Features.Identity.Commands.LoginUser
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly ITenantService _tenantService;
         private readonly IUserService _userService;
+        private readonly ICurrentTenantStore _currentTenantStore;
 
         public LoginUserCommandHandler(
             SignInManager<ApplicationUser> signInManager,
             ITenantService tenantService,
-            IUserService userService)
+            IUserService userService,
+            ICurrentTenantStore currentTenantStore)
         {
             _signInManager = signInManager;
             _tenantService = tenantService;
             _userService = userService;
+            _currentTenantStore = currentTenantStore;
         }
 
         public async Task<Response<LoginUserResponseDto>> Handle(LoginUserCommand request, CancellationToken cancellationToken)
         {
-            var user = await _userService.GetUserByEmailAsync(request.Email);
+            var user = await _userService.GetUserByEmailAsync(request.Email, ignoreQueryFilters: true);
 
             if (user == null || !user.IsActive)
                 return Response<LoginUserResponseDto>.ErrorWithData(new LoginUserResponseDto { Status = LoginStatus.InvalidCredentials, ErrorMessage = "Geçersiz e-posta veya şifre." });
@@ -56,8 +59,11 @@ namespace ST.Application.Features.Identity.Commands.LoginUser
             {
                 new Claim(CustomClaims.TenantId, user.TenantId.ToString()),
                 new Claim(CustomClaims.EmailVerification, user.EmailConfirmed.ToString()),
-                new Claim(CustomClaims.IsSetupCompleted, tenant.IsSetupCompleted.ToString())
+                new Claim(CustomClaims.IsSetupCompleted, tenant.IsSetupCompleted.ToString()),
+                new Claim(CustomClaims.FullName, $"{user.FirstName} {user.LastName}")
             };
+
+            _currentTenantStore.SetTenant(user.TenantId);
 
             await _signInManager.SignInWithClaimsAsync(user, request.RememberMe, claims);
             return Response<LoginUserResponseDto>.Success(new LoginUserResponseDto { Status = LoginStatus.Success });

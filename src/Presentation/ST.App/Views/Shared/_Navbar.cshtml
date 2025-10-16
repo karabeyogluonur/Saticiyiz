@@ -1,3 +1,5 @@
+@using System.Security.Claims
+@using ST.Application.Common.Constants
 <div class="app-navbar flex-shrink-0">
 	<!--begin::Search-->
 	<div class="app-navbar-item align-items-stretch ms-1 ms-md-4">
@@ -500,10 +502,11 @@
 					<!--end::Avatar-->
 					<!--begin::Username-->
 					<div class="d-flex flex-column">
-						<div class="fw-bold d-flex align-items-center fs-5">Ahmet Çelebi
+						<div class="fw-bold d-flex align-items-center fs-7">@User.FindFirstValue(CustomClaims.FullName)
 							<span class="badge badge-light-success fw-bold fs-8 px-2 py-1 ms-2">PRO</span>
 						</div>
-						<a href="#" class="fw-semibold text-muted text-hover-primary fs-7">ahmet.celebi@gmail.com</a>
+						<a href="#"
+							class="fw-semibold text-muted text-hover-primary fs-7">@User.FindFirstValue(ClaimTypes.Name)</a>
 					</div>
 					<!--end::Username-->
 				</div>

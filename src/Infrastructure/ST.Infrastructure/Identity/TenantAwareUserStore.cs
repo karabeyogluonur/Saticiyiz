@@ -22,12 +22,12 @@ public class TenantAwareUserStore : UserStore<ApplicationUser, ApplicationRole, 
     // 🔹 Kullanıcı arama işlemleri tenant bazlı hale gelir:
     public override Task<ApplicationUser> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken = default)
     {
-        return Users.FirstOrDefaultAsync(u => u.NormalizedUserName == normalizedUserName && u.TenantId == _currentTenantStore.Id, cancellationToken);
+        return Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.NormalizedUserName == normalizedUserName, cancellationToken);
     }
 
     public override Task<ApplicationUser> FindByEmailAsync(string normalizedEmail, CancellationToken cancellationToken = default)
     {
-        return Users.FirstOrDefaultAsync(u => u.NormalizedEmail == normalizedEmail && u.TenantId == _currentTenantStore.Id, cancellationToken);
+        return Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.NormalizedEmail == normalizedEmail, cancellationToken);
     }
 
     // 🔹 Kullanıcı rolleri çekilirken tenant’a göre filtrele:

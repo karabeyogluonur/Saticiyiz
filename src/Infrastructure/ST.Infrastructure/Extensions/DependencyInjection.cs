@@ -32,6 +32,8 @@ using ST.Application.Interfaces.Identity;
 using ST.Infrastructure.Services.Identity;
 using ST.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using ST.Application.Interfaces.Billing;
+using ST.Infrastructure.Services.Billing;
 
 namespace ST.Infrastructure.Extensions
 {
@@ -42,45 +44,55 @@ namespace ST.Infrastructure.Extensions
 
             #region Database Configuration
 
-            services.AddScoped<IUnitOfWork, UnitOfWork>();
-
-            // --- DbContext KAYITLARI (Nihai Hali) ---
-
-            // 1. SharedDbContext: Her zaman varsayılan bağlantıyı kullanır.
             var defaultConnectionString = configuration.GetConnectionString("DefaultConnection");
-
             if (string.IsNullOrEmpty(defaultConnectionString))
             {
-                throw new InvalidOperationException("DefaultConnection is not configured.");
+                throw new InvalidOperationException("DefaultConnection 'appsettings.json' dosyasında yapılandırılmamış.");
             }
+
+            // 2. SharedDbContext'i standart ve doğru yöntemle kaydet.
+            // AddDbContext, DbContext'i Scoped olarak kaydeder. DI konteyneri,
+            // yine Scoped olarak kayıtlı olan ICurrentTenantStore'u her istekte
+            // SharedDbContext'in constructor'ına otomatik olarak enjekte edecektir.
             services.AddDbContext<SharedDbContext>(options =>
                 options.UseNpgsql(defaultConnectionString));
 
-            // 2. TenantDbContext:
-            // Bu kayıt, 'dotnet ef migrations add' komutunun çalışması için gereklidir.
-            // Komut çalışırken, bir veritabanı sağlayıcısı belirtilmiş olmalıdır.
-            // Bu yüzden ona da geçici olarak default connection string'i veriyoruz.
-            // Runtime'da bu bağlantı, aşağıdaki AddScoped<ITenantDbContext> kaydı sayesinde ezilecektir.
+            // 3. TenantDbContext:
+            // Bu kayıt, 'dotnet ef migrations add' komutunun tasarım zamanında (design-time)
+            // çalışabilmesi için gereklidir. Runtime'da aşağıdaki fabrika metodu tarafından ezilecektir.
             services.AddDbContext<TenantDbContext>(options =>
                 options.UseNpgsql(defaultConnectionString));
 
-            // 3. ISharedDbContext ve ITenantDbContext arayüzlerini somut sınıflara bağlıyoruz.
-            // Bu, UnitOfWork'ün doğru context'leri almasını sağlar.
+            // 4. Arayüzleri somut sınıflara bağla.
+            // ISharedDbContext istendiğinde, o istek için oluşturulmuş SharedDbContext örneğini ver.
             services.AddScoped<ISharedDbContext>(provider => provider.GetRequiredService<SharedDbContext>());
 
-            // Bu, dinamik bağlantının anahtarıdır. Her istekte ITenantResolver'ı kullanarak
-            // doğru connection string ile yeni bir TenantDbContext örneği oluşturur.
+            // 5. ITenantDbContext'i dinamik olarak oluşturan fabrika metodu.
+            // Her istekte, o anki kiracının veritabanı bağlantı bilgisini kullanarak
+            // TenantDbContext'i oluşturur. Bu kısım doğru ve kalmalıdır.
             services.AddScoped<ITenantDbContext>(serviceProvider =>
             {
                 var resolver = serviceProvider.GetRequiredService<ITenantResolver>();
                 var connectionString = resolver.GetTenantConnectionStringAsync().GetAwaiter().GetResult();
 
+                // Tenant'a özel bir veritabanı bağlantısı bulunamazsa hata fırlatmak yerine
+                // null bir context döndürmek veya varsayılan bir davranış belirlemek daha güvenli olabilir.
+                // Şimdilik mevcut mantığı koruyoruz.
+                if (string.IsNullOrEmpty(connectionString))
+                {
+                    // Veya loglama yapıp null dönebilirsiniz.
+                    throw new InvalidOperationException("Mevcut kiracı için veritabanı bağlantısı bulunamadı.");
+                }
+
                 var optionsBuilder = new DbContextOptionsBuilder<TenantDbContext>();
                 optionsBuilder.UseNpgsql(connectionString);
 
+                // TenantDbContext'in constructor'ı parametresiz ise bu satır yeterli.
                 return new TenantDbContext(optionsBuilder.Options);
             });
 
+            // UnitOfWork kaydını da standart olarak ekliyoruz.
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
             #endregion
 
             #region Identity Configuration
@@ -145,6 +157,8 @@ namespace ST.Infrastructure.Extensions
             services.AddScoped<IPlanService, PlanService>();
             services.AddScoped<ITenantService, TenantService>();
             services.AddScoped<IRoleService, RoleService>();
+            services.AddScoped<ILookupService, LookupService>();
+            services.AddScoped<IBillingProfileService, BillingProfileService>();
 
 
             #endregion

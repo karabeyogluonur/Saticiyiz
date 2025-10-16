@@ -1,6 +1,7 @@
 using System.Reflection;
 using FluentValidation;
 using Serilog;
+using ST.App.Features.Billing.Factories;
 using ST.Application.Extensions;
 using ST.Application.Interfaces.Identity;
 using ST.Infrastructure.Extensions;
@@ -41,6 +42,10 @@ namespace ST.App.Mvc
         public static void AddAuthServices(this IServiceCollection services)
         {
             services.AddScoped<ICurrentUserService, CurrentUserService>();
+        }
+        public static void AddFactoryServices(this IServiceCollection services)
+        {
+            services.AddScoped<IBillingModelFactory, BillingModelFactory>();
         }
 
         public static void AddLayerServices(this IServiceCollection services, IConfiguration configuration)

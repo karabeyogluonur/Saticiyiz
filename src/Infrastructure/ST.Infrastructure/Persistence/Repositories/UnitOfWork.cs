@@ -8,6 +8,7 @@ using ST.Domain.Events.Common;
 using ST.Infrastructure.Persistence.Contexts;
 using System.Transactions;
 using ST.Domain.Entities.Configurations;
+using ST.Infrastructure.Persistence.Repositories;
 
 namespace ST.Infrastructure.Persistence.Repositories
 {
@@ -16,17 +17,8 @@ namespace ST.Infrastructure.Persistence.Repositories
         private readonly SharedDbContext _sharedContext;
         private readonly TenantDbContext _tenantContext;
 
-        private IUserRepository _users;
-        private IRoleRepository _roles;
-        private ITenantRepository _tenants;
-        private ISubscriptionRepository _subscriptions;
-        private ISettingRepository _settings;
-        private IPlanRepository _plans;
-        private IPlanFeatureRepository _planFeatures;
-        private IFeatureDefinitionRepository _featureDefinitions;
-        private IBillingProfileRepository _billingProfiles;
-        private ICityRepository _cities;
-        private IDistrictRepository _districts;
+        // ÇÖZÜM: Repository'ler için private backing field'lar kaldırıldı.
+        // Bu, her property çağrıldığında yeni bir repository örneği oluşturulmasını sağlar.
 
         public UnitOfWork(SharedDbContext sharedContext, TenantDbContext tenantContext)
         {
@@ -34,24 +26,18 @@ namespace ST.Infrastructure.Persistence.Repositories
             _tenantContext = tenantContext ?? throw new ArgumentNullException(nameof(tenantContext));
         }
 
-        public IUserRepository Users => _users ??= new UserRepository(_sharedContext);
-        public IRoleRepository Roles => _roles ??= new RoleRepository(_sharedContext);
-        public ITenantRepository Tenants => _tenants ??= new TenantRepository(_sharedContext);
-        public ISubscriptionRepository Subscriptions => _subscriptions ??= new SubscriptionRepository(_sharedContext);
-
-        public ISettingRepository Settings => _settings ??= new SettingRepository(_sharedContext);
-
-        public IPlanRepository Plans => _plans ??= new PlanRepository(_sharedContext);
-
-        public IPlanFeatureRepository PlanFeatures => _planFeatures ??= new PlanFeatureRepository(_sharedContext);
-
-        public IFeatureDefinitionRepository FeatureDefinitions => _featureDefinitions ??= new FeatureDefinitionRepository(_sharedContext);
-
-        public IBillingProfileRepository BillingProfiles => _billingProfiles ??= new BillingProfileRepository(_sharedContext);
-
-        public ICityRepository Cities => _cities ??= new CityRepository(_sharedContext);
-
-        public IDistrictRepository Districts => _districts ??= new DistrictRepository(_sharedContext);
+        // Her çağrıldığında, o anki isteğe ait _sharedContext ile YENİ BİR repository oluşturur.
+        public IUserRepository Users => new UserRepository(_sharedContext);
+        public IRoleRepository Roles => new RoleRepository(_sharedContext);
+        public ITenantRepository Tenants => new TenantRepository(_sharedContext);
+        public ISubscriptionRepository Subscriptions => new SubscriptionRepository(_sharedContext);
+        public ISettingRepository Settings => new SettingRepository(_sharedContext);
+        public IPlanRepository Plans => new PlanRepository(_sharedContext);
+        public IPlanFeatureRepository PlanFeatures => new PlanFeatureRepository(_sharedContext);
+        public IFeatureDefinitionRepository FeatureDefinitions => new FeatureDefinitionRepository(_sharedContext);
+        public IBillingProfileRepository BillingProfiles => new BillingProfileRepository(_sharedContext);
+        public ICityRepository Cities => new CityRepository(_sharedContext);
+        public IDistrictRepository Districts => new DistrictRepository(_sharedContext);
 
         public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -61,7 +47,6 @@ namespace ST.Infrastructure.Persistence.Repositories
             {
                 tenantResult = await _tenantContext.SaveChangesAsync(cancellationToken);
             }
-
             return sharedResult + tenantResult;
         }
 
@@ -83,7 +68,6 @@ namespace ST.Infrastructure.Persistence.Repositories
             _sharedContext.ClearDomainEvents();
         }
     }
-
     public class UserRepository : Repository<ApplicationUser>, IUserRepository
     {
         public UserRepository(SharedDbContext context) : base(context) { }

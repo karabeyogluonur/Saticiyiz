@@ -5,10 +5,6 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSerilogServices();
 builder.UseSerilog();
-builder.Services.ConfigureApplicationCookie(options =>
-{
-    options.Cookie.Name = "DevIdentityCookie_" + Guid.NewGuid();
-});
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddBaseServices();
 builder.Services.AddLayerServices(builder.Configuration);
@@ -17,6 +13,7 @@ builder.Services.AddAuthServices();
 builder.Services.AddLogging();
 builder.Services.AddAutoMapper();
 builder.Services.AddFluentValidation();
+builder.Services.AddFactoryServices();
 
 WebApplication app = builder.Build();
 

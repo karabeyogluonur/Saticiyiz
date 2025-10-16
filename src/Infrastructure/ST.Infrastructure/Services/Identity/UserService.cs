@@ -72,9 +72,9 @@ public class UserService : IUserService
         await _userManager.RemoveClaimAsync(user, claim);
     }
 
-    public async Task<ApplicationUser> GetUserByEmailAsync(string userEmail)
+    public async Task<ApplicationUser> GetUserByEmailAsync(string userEmail, bool ignoreQueryFilters = false)
     {
-        return await _unitOfWork.Users.GetFirstOrDefaultAsync(predicate: user => user.Email == userEmail);
+        return await _unitOfWork.Users.GetFirstOrDefaultAsync(predicate: user => user.Email == userEmail, ignoreQueryFilters: ignoreQueryFilters);
     }
     public async Task<string> GeneratePasswordResetTokenAsync(ApplicationUser user)
     {

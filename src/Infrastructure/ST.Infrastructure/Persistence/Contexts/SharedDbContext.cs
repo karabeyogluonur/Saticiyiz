@@ -1,18 +1,16 @@
-using MediatR;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using ST.Application.Interfaces.Contexts;
 using ST.Application.Interfaces.Tenancy;
-using ST.Domain.Entities;
-using ST.Domain.Entities.Billing;
 using ST.Domain.Entities.Common;
-using ST.Domain.Entities.Configurations;
 using ST.Domain.Entities.Identity;
-using ST.Domain.Entities.Lookup;
-using ST.Domain.Entities.Subscriptions;
 using ST.Domain.Events.Common;
 using System.Linq.Expressions;
+using ST.Domain.Entities.Billing;
+using ST.Domain.Entities.Configurations;
+using ST.Domain.Entities.Lookup;
+using ST.Domain.Entities.Subscriptions;
+using ST.Domain.Entities;
 
 namespace ST.Infrastructure.Persistence.Contexts
 {
@@ -21,7 +19,10 @@ namespace ST.Infrastructure.Persistence.Contexts
         private readonly List<DomainEvent> _domainEvents = new();
         public IReadOnlyList<DomainEvent> DomainEvents => _domainEvents.AsReadOnly();
 
+        // ÇÖZÜM: DbContext artık TenantId'yi saklamayacak.
+        // Bunun yerine, her an TenantId'yi sorgulayabileceği servisin kendisini saklayacak.
         private readonly ICurrentTenantStore _currentTenantStore;
+
         public DbSet<ApplicationTenant> ApplicationTenants { get; set; }
         public DbSet<Subscription> Subscriptions { get; set; }
         public DbSet<Plan> Plans { get; set; }
@@ -32,8 +33,11 @@ namespace ST.Infrastructure.Persistence.Contexts
         public DbSet<City> Cities { get; set; }
         public DbSet<District> Districts { get; set; }
 
-
-        public SharedDbContext(DbContextOptions<SharedDbContext> options) : base(options) { }
+        public SharedDbContext(DbContextOptions<SharedDbContext> options) : base(options)
+        {
+            // Bu constructor, ICurrentTenantStore olmadan çağrıldığında (örneğin migration oluştururken)
+            // _currentTenantStore null kalacaktır. Bu bir sorun teşkil etmez.
+        }
 
         public SharedDbContext(
             DbContextOptions<SharedDbContext> options,
@@ -46,25 +50,47 @@ namespace ST.Infrastructure.Persistence.Contexts
         {
             base.OnModelCreating(builder);
 
-
-            if (_currentTenantStore != null && _currentTenantStore.Id.HasValue)
+            foreach (var entityType in builder.Model.GetEntityTypes())
             {
-                foreach (var entityType in builder.Model.GetEntityTypes())
+                if (typeof(ITenantEntity).IsAssignableFrom(entityType.ClrType))
                 {
-                    if (typeof(ITenantEntity).IsAssignableFrom(entityType.ClrType))
-                    {
-                        var parameter = Expression.Parameter(entityType.ClrType, "e");
-                        var body = Expression.Equal(
-                            Expression.Property(parameter, nameof(ITenantEntity.TenantId)),
-                            Expression.Constant(_currentTenantStore.Id.Value));
-                        builder.Entity(entityType.ClrType).HasQueryFilter(Expression.Lambda(body, parameter));
-                    }
+                    // ÇÖZÜM: Filtre ifadesini, sorgu anında ICurrentTenantStore.Id'yi
+                    // okuyacak şekilde dinamik hale getiriyoruz.
+                    builder.Entity(entityType.ClrType)
+                           .HasQueryFilter(CreateTenantFilter(entityType.ClrType));
                 }
             }
 
+            // Setting için özel filtreleme.
+            // Bu da artık sorgu anındaki _currentTenantStore.Id'yi kullanacak.
             builder.Entity<Setting>().HasQueryFilter(e => e.TenantId == _currentTenantStore.Id || e.TenantId == null);
 
             builder.ApplyConfigurationsFromAssembly(typeof(SharedDbContext).Assembly);
+        }
+
+        private LambdaExpression CreateTenantFilter(Type entityType)
+        {
+            var parameter = Expression.Parameter(entityType, "e");
+            // e.TenantId
+            var property = Expression.Property(parameter, nameof(ITenantEntity.TenantId));
+
+            // this._currentTenantStore.Id
+            var tenantStoreField = typeof(SharedDbContext).GetField(nameof(_currentTenantStore), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var tenantStoreExpression = Expression.Field(Expression.Constant(this), tenantStoreField!);
+            var tenantIdProperty = typeof(ICurrentTenantStore).GetProperty(nameof(ICurrentTenantStore.Id));
+            var tenantIdExpression = Expression.Property(tenantStoreExpression, tenantIdProperty!);
+
+            // e.TenantId == this._currentTenantStore.Id
+            // NOT: Her iki tarafın da tipleri (int ve int?) uyuşmadığı için Convert kullanıyoruz.
+            var body = Expression.Equal(
+                property,
+                Expression.Convert(tenantIdExpression, property.Type));
+
+            // _currentTenantStore'un null olmadığı bir senaryo için ek kontrol
+            var nullCheck = Expression.NotEqual(tenantStoreExpression, Expression.Constant(null));
+            var finalBody = Expression.AndAlso(nullCheck, body);
+
+            return Expression.Lambda(finalBody, parameter);
         }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = new CancellationToken())
@@ -82,8 +108,7 @@ namespace ST.Infrastructure.Persistence.Contexts
                 }
             }
 
-            int result = await base.SaveChangesAsync(cancellationToken);
-            return result;
+            return await base.SaveChangesAsync(cancellationToken);
         }
 
         private void CollectDomainEvents()
@@ -93,7 +118,6 @@ namespace ST.Infrastructure.Persistence.Contexts
                 .Where(e => e.DomainEvents.Any())
                 .ToList();
 
-            // Event'leri IMediator'a göndermek yerine, sadece bu context'e ait listeye ekliyoruz.
             foreach (var entity in domainEventEntities)
             {
                 _domainEvents.AddRange(entity.DomainEvents);

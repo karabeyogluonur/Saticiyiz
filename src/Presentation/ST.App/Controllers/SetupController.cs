@@ -1,13 +1,10 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ST.Application.Features.Tenancy.Commands.SetupTenant;
 using ST.App.Mvc.Controllers;
-using System.Threading.Tasks;
+using ST.Application.Features.Tenancy.Commands.SetupTenant;
 using ST.Application.Interfaces.Messages;
 using ST.Application.Wrappers;
-using Microsoft.AspNetCore.Identity;
-using ST.Domain.Entities.Identity;
 
 namespace ST.App.Controllers
 {
@@ -16,24 +13,33 @@ namespace ST.App.Controllers
     {
         private readonly IMediator _mediator;
         private readonly INotificationService _notificationService;
-        public SetupController(IMediator mediator, INotificationService notificationService)
+        private readonly ILogger<SetupController> _logger;
+
+        public SetupController(
+            IMediator mediator,
+            INotificationService notificationService,
+            ILogger<SetupController> logger)
         {
             _mediator = mediator;
             _notificationService = notificationService;
+            _logger = logger;
         }
 
+        [HttpGet]
         public async Task<IActionResult> Index()
         {
             Response<int> response = await _mediator.Send(new SetupTenantCommand());
 
             if (response.Succeeded)
             {
-                await _notificationService.SuccessAsync(response.Message);
+                _logger.LogInformation("Tenant setup completed successfully. Tenant Id: {TenantId}", response.Data);
+                await _notificationService.SuccessAsync("Tenant kurulumu başarıyla tamamlandı.");
                 return RedirectToAction("Index", "Home");
             }
             else
             {
-                await _notificationService.ErrorAsync(response.Message);
+                _logger.LogWarning("Tenant setup failed. Errors: {Errors}", response.Message);
+                await _notificationService.ErrorAsync($"Proje kurulumu sırasında bir hata oluştu: {response.Message}");
                 return RedirectToAction("Login", "Auth");
             }
         }
