@@ -63,7 +63,7 @@ namespace ST.Application.Features.Tenancy.Commands.SetupTenant
 
             int trialDays = await _settingService.GetValueAsync<int>(SettingKeyHelper.GetKey<SubscriptionSetting, int>(s => s.TrialPeriodDays));
 
-            Plan defaultPlan = await _planService.GetDefaultPlanAsync();
+            Plan defaultPlan = await _planService.GetTrialPlanAsync();
 
             if (defaultPlan == null || trialDays <= 0)
                 return Response<int>.Error("System default settings are not configured.");
@@ -77,7 +77,6 @@ namespace ST.Application.Features.Tenancy.Commands.SetupTenant
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             await _signInManager.RefreshSignInAsync(user);
-
             return Response<int>.Success(tenant.Id, "Kurulum işlemleriniz başarıyla tamamlanmıştır.");
         }
     }

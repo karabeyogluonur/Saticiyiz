@@ -1,10 +1,5 @@
 using MediatR;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
-using ST.Application.Constants;
-using ST.Application.DTOs.Identity;
-using ST.Application.Features.Identity.Commands.UnsubscribeNewsletter;
-using ST.Application.Interfaces.Common;
 using ST.Application.Interfaces.Identity;
 using ST.Application.Interfaces.Security;
 using ST.Application.Wrappers;
@@ -35,12 +30,11 @@ namespace ST.Application.Features.Identity.Commands.UnsubscribeNewsletter
             if (userEmail == null)
                 return Response<string>.Error(tokenError!);
 
-            ApplicationUser user = await _userService.GetUserByEmailAsync(userEmail);
+            ApplicationUser user = await _userService.GetUserByEmailAsync(userEmail, false);
 
             if (user == null)
                 return Response<string>.Error("Kullanıcı bulunamadı. Lütfen destek ekibi ile iletişime geçiniz!");
 
-            // 3. Yetkilendirme kontrolü (Handler'a özgü mantık)
             string currentUserEmail = _userContext.EmailOrUsername;
 
             if (!string.IsNullOrEmpty(currentUserEmail) && !string.Equals(currentUserEmail, userEmail, StringComparison.OrdinalIgnoreCase))

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using ST.Domain.Entities;
 using ST.Domain.Entities.Billing;
 using ST.Domain.Entities.Configurations;
@@ -12,6 +13,7 @@ namespace ST.Application.Interfaces.Contexts
     /// </summary>
     public interface ISharedDbContext
     {
+        DatabaseFacade Database { get; }
         // Temel ve Ortak Varlıklar
         DbSet<ApplicationTenant> ApplicationTenants { get; set; }
         DbSet<Subscription> Subscriptions { get; set; }

@@ -12,7 +12,7 @@ using ST.Infrastructure.Persistence.Contexts;
 namespace ST.Infrastructure.Migrations
 {
     [DbContext(typeof(SharedDbContext))]
-    [Migration("20251012192107_Initial")]
+    [Migration("20251021121056_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -595,6 +595,9 @@ namespace ST.Infrastructure.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsTrial")
                         .HasColumnType("boolean");
 
                     b.Property<string>("LastModifiedBy")

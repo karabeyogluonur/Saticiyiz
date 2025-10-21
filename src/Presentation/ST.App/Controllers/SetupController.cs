@@ -33,7 +33,6 @@ namespace ST.App.Controllers
             if (response.Succeeded)
             {
                 _logger.LogInformation("Tenant setup completed successfully. Tenant Id: {TenantId}", response.Data);
-                await _notificationService.SuccessAsync("Tenant kurulumu başarıyla tamamlandı.");
                 return RedirectToAction("Index", "Home");
             }
             else

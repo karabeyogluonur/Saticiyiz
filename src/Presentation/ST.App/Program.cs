@@ -3,7 +3,6 @@ using ST.App.Mvc;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddSerilogServices();
 builder.UseSerilog();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddBaseServices();

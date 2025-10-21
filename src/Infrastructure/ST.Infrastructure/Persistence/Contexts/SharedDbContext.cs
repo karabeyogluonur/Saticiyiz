@@ -18,11 +18,7 @@ namespace ST.Infrastructure.Persistence.Contexts
     {
         private readonly List<DomainEvent> _domainEvents = new();
         public IReadOnlyList<DomainEvent> DomainEvents => _domainEvents.AsReadOnly();
-
-        // ÇÖZÜM: DbContext artık TenantId'yi saklamayacak.
-        // Bunun yerine, her an TenantId'yi sorgulayabileceği servisin kendisini saklayacak.
         private readonly ICurrentTenantStore _currentTenantStore;
-
         public DbSet<ApplicationTenant> ApplicationTenants { get; set; }
         public DbSet<Subscription> Subscriptions { get; set; }
         public DbSet<Plan> Plans { get; set; }

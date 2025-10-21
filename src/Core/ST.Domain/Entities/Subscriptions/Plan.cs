@@ -9,6 +9,7 @@ namespace ST.Domain.Entities.Subscriptions
         public decimal Price { get; set; }
         public bool IsActive { get; set; } = true;
         public bool IsDefault { get; set; }
+        public bool IsTrial { get; set; }
 
         public virtual ICollection<PlanFeature> Features { get; set; } = new List<PlanFeature>();
         public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();

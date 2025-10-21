@@ -594,6 +594,9 @@ namespace ST.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsTrial")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("LastModifiedBy")
                         .HasColumnType("text");
 

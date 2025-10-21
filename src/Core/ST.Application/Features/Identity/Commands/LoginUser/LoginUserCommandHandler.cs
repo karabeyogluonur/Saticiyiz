@@ -55,17 +55,9 @@ namespace ST.Application.Features.Identity.Commands.LoginUser
             if (tenant == null)
                 return Response<LoginUserResponseDto>.ErrorWithData(new LoginUserResponseDto { Status = LoginStatus.NotAllowed, ErrorMessage = "Hesabınızla ilişkili bir şirket bilgisi bulunamadı. Lütfen destek ile iletişime geçin." });
 
-            var claims = new List<Claim>
-            {
-                new Claim(CustomClaims.TenantId, user.TenantId.ToString()),
-                new Claim(CustomClaims.EmailVerification, user.EmailConfirmed.ToString()),
-                new Claim(CustomClaims.IsSetupCompleted, tenant.IsSetupCompleted.ToString()),
-                new Claim(CustomClaims.FullName, $"{user.FirstName} {user.LastName}")
-            };
-
             _currentTenantStore.SetTenant(user.TenantId);
 
-            await _signInManager.SignInWithClaimsAsync(user, request.RememberMe, claims);
+            await _signInManager.SignInAsync(user, request.RememberMe);
             return Response<LoginUserResponseDto>.Success(new LoginUserResponseDto { Status = LoginStatus.Success });
         }
     }

@@ -29,14 +29,14 @@ public class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswordComman
 
     public async Task<Response<string>> Handle(ForgotPasswordCommand request, CancellationToken cancellationToken)
     {
-        ApplicationUser user = await _userService.GetUserByEmailAsync(request.Email);
+        ApplicationUser user = await _userService.GetUserByEmailAsync(request.Email, true);
 
         if (user == null)
             return Response<string>.Error("Bu e-posta adresine kayıtlı kullanıcı bulunamadı!");
 
         string identityToken = await _userService.GeneratePasswordResetTokenAsync(user);
 
-        string resetUrl = _urlHelperService.CreatePasswordResetUrl(user.Email, identityToken);
+        string resetUrl = await _urlHelperService.CreatePasswordResetUrlAsync(user.Email, identityToken);
 
         string forgotPasswordEmailJson = JsonSerializer.Serialize(new ForgotPasswordEmailTemplateDto(resetUrl));
 

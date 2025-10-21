@@ -10,31 +10,29 @@ using ST.Application.Interfaces.Security;
 using ST.Application.Wrappers;
 using ST.Domain.Entities.Identity;
 using ST.Application.DTOs.Messages.EmailTemplates;
+using ST.Application.Interfaces.Identity;
 
 namespace ST.Application.Features.Identity.Commands.EmailVerification;
 
 public class SendEmailVerificationHandler : IRequestHandler<SendEmailVerificationCommand, Response<string>>
 {
-    private readonly UserManager<ApplicationUser> _userManager;
-    private readonly IProtectedDataService _protectedDataService;
+    private readonly IUserService _userService;
     private readonly IUrlHelperService _urlHelperService;
     private readonly IBackgroundJobClient _backgroundJobClient;
 
     public SendEmailVerificationHandler(
-        UserManager<ApplicationUser> userManager,
-        IProtectedDataService protectedDataService,
+        IUserService userService,
         IUrlHelperService urlHelperService,
         IBackgroundJobClient backgroundJobClient)
     {
-        _userManager = userManager;
-        _protectedDataService = protectedDataService;
         _urlHelperService = urlHelperService;
         _backgroundJobClient = backgroundJobClient;
+        _userService = userService;
     }
 
     public async Task<Response<string>> Handle(SendEmailVerificationCommand request, CancellationToken cancellationToken)
     {
-        ApplicationUser user = await _userManager.FindByEmailAsync(request.Email);
+        ApplicationUser user = await _userService.GetUserByEmailAsync(request.Email, true);
 
         if (user == null)
             return Response<string>.Error("Bu e-posta ile kayıtlı kullanıcı bulunamadı.");
@@ -42,27 +40,15 @@ public class SendEmailVerificationHandler : IRequestHandler<SendEmailVerificatio
         if (user.EmailConfirmed)
             return Response<string>.Error("E-posta zaten doğrulanmış.");
 
-        string identityToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+        string identityToken = await _userService.GenerateEmailConfirmationTokenAsync(user);
 
-        EmailVerificationPayloadDto payload = new EmailVerificationPayloadDto
-        {
-            Email = user.Email,
-            IdentityToken = identityToken
-        };
+        string emailVerificationUrl = await _urlHelperService.CreateEmailConfirmationUrlAsync(user.Email, identityToken);
 
-        string verificationProtectedData = _protectedDataService.Protect(payload, DataProtectionPurposes.EmailVerification);
-
-        string verificationUrl = _urlHelperService.BuildAbsoluteUrl("/Auth/VerifyEmail",
-            new Dictionary<string, string> { { "token", verificationProtectedData } }
-        );
-
-        string unsubscribeProtectedData = _protectedDataService.Protect(user.Email, DataProtectionPurposes.UnsubscribeNewsletter);
-
-        string unsubscribeUrl = _urlHelperService.BuildUnsubscribeUrl(unsubscribeProtectedData);
+        string unsubscribeUrl = await _urlHelperService.BuildUnsubscribeUrlAsync(user.Email);
 
         string emailTemplateJson = JsonSerializer.Serialize(new VerificationEmailTemplateDto
         {
-            VerificationUrl = verificationUrl,
+            VerificationUrl = emailVerificationUrl,
             FirstName = user.FirstName,
             UnsubscribeUrl = unsubscribeUrl
         });

@@ -27,7 +27,7 @@ public class ResetPasswordHandler : IRequestHandler<ResetPasswordCommand, Respon
         if (payload == null)
             return Response<string>.Error(tokenError!);
 
-        ApplicationUser user = await _userService.GetUserByEmailAsync(payload.Email);
+        ApplicationUser user = await _userService.GetUserByEmailAsync(payload.Email, false);
 
         if (user == null)
             return Response<string>.Error("Kullanıcı bulunamadı. Lütfen destek ekibi ile iletişime geçiniz!"!);

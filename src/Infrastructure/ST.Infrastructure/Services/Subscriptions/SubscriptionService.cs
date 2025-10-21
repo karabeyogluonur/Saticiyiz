@@ -39,17 +39,4 @@ public class SubscriptionService : ISubscriptionService
 
         return subscription;
     }
-
-    public async Task<Subscription> GetActiveOrTrialSubscriptionAsync(int tenantId)
-    {
-        return await _unitOfWork.Subscriptions
-        .GetFirstOrDefaultAsync(predicate: s => s.TenantId == tenantId &&
-                                (s.Status == SubscriptionStatus.Active || s.Status == SubscriptionStatus.Trial), ignoreQueryFilters: true);
-    }
-
-    public async Task<Subscription> GetActiveOrTrialSubscriptionAsync()
-    {
-        return await _unitOfWork.Subscriptions
-        .GetFirstOrDefaultAsync(predicate: s => s.Status == SubscriptionStatus.Active || s.Status == SubscriptionStatus.Trial);
-    }
 }

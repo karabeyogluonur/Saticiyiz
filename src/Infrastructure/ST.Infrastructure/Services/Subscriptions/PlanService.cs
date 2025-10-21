@@ -28,5 +28,9 @@ public class PlanService : IPlanService
     {
         return await _unitOfWork.Plans.GetFirstOrDefaultAsync(predicate: plan => plan.IsDefault && plan.IsActive);
     }
+    public async Task<Plan> GetTrialPlanAsync()
+    {
+        return await _unitOfWork.Plans.GetFirstOrDefaultAsync(predicate: plan => plan.IsTrial && plan.IsActive);
+    }
 
 }

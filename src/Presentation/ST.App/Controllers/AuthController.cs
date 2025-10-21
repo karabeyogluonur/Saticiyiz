@@ -80,7 +80,6 @@ public class AuthController : BaseController
             await _notificationService.SuccessAsync(
                 "Kaydınız başarıyla oluşturuldu! Giriş yapmadan önce e-posta adresinizi doğrulamanız gerekmektedir.");
 
-            // ✅ Kullanıcıyı doğrudan giriş yaptırmak riskli, bu sebeple email doğrulama öncelikli olmalı
             return RedirectToAction("Login", "Auth");
         }
 

@@ -10,7 +10,6 @@ namespace ST.Infrastructure.Seeds
 {
     public class SettingSeeder : ISettingSeeder, ISeeder
     {
-        // IUnitOfWork yerine doğrudan SharedDbContext'e bağımlı oluyoruz.
         private readonly SharedDbContext _context;
 
         public SettingSeeder(SharedDbContext context)

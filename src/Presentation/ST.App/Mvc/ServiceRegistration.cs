@@ -1,6 +1,5 @@
 using System.Reflection;
 using FluentValidation;
-using Serilog;
 using ST.App.Features.Billing.Factories;
 using ST.Application.Extensions;
 using ST.Application.Interfaces.Identity;
@@ -15,20 +14,7 @@ namespace ST.App.Mvc
             services.AddControllersWithViews().AddRazorRuntimeCompilation();
             services.AddMemoryCache();
         }
-        public static void AddSerilogServices(this IServiceCollection services)
-        {
-            // Bu yapılandırma, appsettings.json dosyasındaki "Serilog" bölümünü
-            // okuyarak tüm ayarları (veritabanı bağlantısı dahil) oradan almasını sağlar.
-            Log.Logger = new LoggerConfiguration()
-                .ReadFrom.Configuration(new ConfigurationBuilder()
-                    .AddJsonFile("appsettings.json")
-                    .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", optional: true)
-                    .Build())
-                .Enrich.FromLogContext()
-                .CreateLogger();
 
-            services.AddSerilog();
-        }
         public static void AddAutoMapper(this IServiceCollection services)
         {
             services.AddAutoMapper(Assembly.GetExecutingAssembly());
@@ -41,7 +27,7 @@ namespace ST.App.Mvc
 
         public static void AddAuthServices(this IServiceCollection services)
         {
-            services.AddScoped<ICurrentUserService, CurrentUserService>();
+
         }
         public static void AddFactoryServices(this IServiceCollection services)
         {

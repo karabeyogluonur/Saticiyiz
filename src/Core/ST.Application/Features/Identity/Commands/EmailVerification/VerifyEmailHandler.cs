@@ -28,15 +28,13 @@ public class VerifyEmailHandler : IRequestHandler<VerifyEmailCommand, Response<s
         if (payload == null)
             return Response<string>.Error(tokenError!);
 
-        ApplicationUser user = await _userService.GetUserByEmailAsync(payload.Email);
+        ApplicationUser user = await _userService.GetUserByEmailAsync(payload.Email, true);
 
         if (user == null)
             return Response<string>.Error("Kullanıcı bulunamadı. Doğrulama e-postasını tekrar göndererek tekrar deneyiniz!");
 
         if (user.EmailConfirmed)
-        {
             return Response<string>.Error("E-posta zaten doğrulanmış.");
-        }
 
         IdentityResult identityResult = await _userService.ConfirmEmailAsync(user, payload.IdentityToken);
 

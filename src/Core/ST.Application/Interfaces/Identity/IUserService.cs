@@ -21,6 +21,7 @@ namespace ST.Application.Interfaces.Identity
         Task<IdentityResult> ConfirmEmailAsync(ApplicationUser user, string identityToken);
         Task<IdentityResult> ResetPasswordAsync(ApplicationUser user, string identityToken, string newPassword);
         Task<IdentityResult> UnsubscribeFromNewsletterAsync(ApplicationUser user);
+        Task<string> GenerateEmailConfirmationTokenAsync(ApplicationUser user);
 
     }
 }

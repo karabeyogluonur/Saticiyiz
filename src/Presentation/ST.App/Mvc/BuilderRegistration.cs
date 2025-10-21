@@ -1,4 +1,5 @@
 using Serilog;
+using Serilog.Sinks.PostgreSQL;
 using ST.App.Mvc.Middlewares;
 using ST.Application.Interfaces.Configuration;
 
@@ -11,12 +12,40 @@ public static class BuilderRegistration
         application.UseHttpsRedirection();
         application.UseStaticFiles();
     }
-    public static void UseSerilog(this WebApplicationBuilder? builder)
+
+    public static void UseSerilog(this WebApplicationBuilder builder)
     {
+        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+        var columnOptions = new Dictionary<string, ColumnWriterBase>
+        {
+            { "message", new RenderedMessageColumnWriter() },
+            { "message_template", new MessageTemplateColumnWriter() },
+            { "level", new LevelColumnWriter(true, NpgsqlTypes.NpgsqlDbType.Varchar) },
+            { "raise_date", new TimestampColumnWriter() },
+            { "exception", new ExceptionColumnWriter() },
+            { "properties", new LogEventSerializedColumnWriter() },
+            { "props_test", new PropertiesColumnWriter(NpgsqlTypes.NpgsqlDbType.Jsonb) },
+            { "machine_name", new SinglePropertyColumnWriter("MachineName", PropertyWriteMethod.ToString, NpgsqlTypes.NpgsqlDbType.Varchar, "l") },
+            { "user_id", new SinglePropertyColumnWriter("UserId", PropertyWriteMethod.ToString, NpgsqlTypes.NpgsqlDbType.Varchar) },
+            { "tenant_id", new SinglePropertyColumnWriter("TenantId", PropertyWriteMethod.ToString, NpgsqlTypes.NpgsqlDbType.Varchar) },
+            { "request_path", new SinglePropertyColumnWriter("RequestPath", PropertyWriteMethod.ToString, NpgsqlTypes.NpgsqlDbType.Varchar) }
+        };
+
         builder.Host.UseSerilog((context, services, configuration) => configuration
             .ReadFrom.Configuration(context.Configuration)
             .ReadFrom.Services(services)
-            .Enrich.FromLogContext());
+            .Enrich.FromLogContext()
+            .Enrich.WithMachineName()
+            .Enrich.WithThreadId()
+            .WriteTo.Console()
+            .WriteTo.PostgreSQL(
+                connectionString,
+                "Logs",
+                columnOptions,
+                needAutoCreateTable: true
+            )
+        );
     }
     public static void UseCustomMiddlewares(this WebApplication builder)
     {

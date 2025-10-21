@@ -124,12 +124,13 @@ namespace ST.Infrastructure.Extensions
             services.AddScoped<UserManager<ApplicationUser>, TenantAwareUserManager>();
             services.AddScoped<IUserStore<ApplicationUser>, TenantAwareUserStore>();
             services.AddScoped<IRoleStore<ApplicationRole>, TenantAwareRoleStore>();
+            services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, AppClaimsPrincipalFactory>();
 
-
-
+            var cookieSuffix = Guid.NewGuid().ToString("N").Substring(0, 8);
 
             services.ConfigureApplicationCookie(options =>
             {
+                options.Cookie.Name = $".Saticiyiz.Auth_{cookieSuffix}";
                 options.LoginPath = "/Auth/Login";
                 options.LogoutPath = "/Auth/Logout";
                 options.AccessDeniedPath = "/Error/AccessDenied";
@@ -159,6 +160,7 @@ namespace ST.Infrastructure.Extensions
             services.AddScoped<IRoleService, RoleService>();
             services.AddScoped<ILookupService, LookupService>();
             services.AddScoped<IBillingProfileService, BillingProfileService>();
+            services.AddScoped<IHttpContextUserClaimService, HttpContextUserClaimService>();
 
 
             #endregion

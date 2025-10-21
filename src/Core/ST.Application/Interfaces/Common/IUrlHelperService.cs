@@ -5,9 +5,10 @@ namespace ST.Application.Interfaces.Common
 {
     public interface IUrlHelperService
     {
-        string BuildAbsoluteUrl(string relativePath, Dictionary<string, string>? queryParams = null);
-        string BuildUnsubscribeUrl(string token);
-        public string CreatePasswordResetUrl(string email, string identityToken);
+        Task<string> BuildAbsoluteUrlAsync(string relativePath, Dictionary<string, string>? queryParams = null);
+        Task<string> BuildUnsubscribeUrlAsync(string token);
+        Task<string> CreatePasswordResetUrlAsync(string email, string identityToken);
+        Task<string> CreateEmailConfirmationUrlAsync(string email, string identityToken);
     }
 
 

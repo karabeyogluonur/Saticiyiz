@@ -82,6 +82,7 @@ namespace ST.Infrastructure.Migrations
                     Price = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     IsDefault = table.Column<bool>(type: "boolean", nullable: false),
+                    IsTrial = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: false),
                     CreatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     LastModifiedBy = table.Column<string>(type: "text", nullable: true),

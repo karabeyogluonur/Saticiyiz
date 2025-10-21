@@ -1,16 +1,10 @@
 using AutoMapper;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 using ST.Application.DTOs.Billing;
 using ST.Application.Interfaces.Billing;
-using ST.Application.Interfaces.Common;
-using ST.Application.Interfaces.Repositories;
 using ST.Application.Wrappers;
 using ST.Domain.Entities.Billing;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+
 
 namespace ST.Application.Features.Billing.Queries.GetAllBillingProfile
 {
@@ -28,6 +22,7 @@ namespace ST.Application.Features.Billing.Queries.GetAllBillingProfile
         public async Task<Response<IEnumerable<BillingProfileDto>>> Handle(GetAllBillingProfilesQuery request, CancellationToken cancellationToken)
         {
             IEnumerable<BillingProfile> billingProfiles = await _billingProfileService.GetAllBillingProfileAsync();
+
             IEnumerable<BillingProfileDto> mappedProfiles = _mapper.Map<IEnumerable<BillingProfileDto>>(billingProfiles);
 
             return Response<IEnumerable<BillingProfileDto>>.Success(mappedProfiles);
